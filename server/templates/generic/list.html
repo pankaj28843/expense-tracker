@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block heading %}{{ context_object_name }}{% endblock %}
+{% block content %}  
+  <ul>
+    {% for object in object_list %}
+      <li><a href="{{ object.get_absolute_url }}">{{ object }}</a></li>
+    {% endfor %}
+  </ul>
+{% endblock %}

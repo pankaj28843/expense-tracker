@@ -1,0 +1,5 @@
+*.pyc
+.*.swp
+*.class
+server/settings.py
+server/static-deploy

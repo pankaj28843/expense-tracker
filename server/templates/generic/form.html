@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block content %}
+  
+  {% if form.is_multipart %}<form enctype="multipart/form-data" method="post" action="/foo/">{% else %}<form method="post" action="/foo/">{% endif %}
+  {{ form }}
+  </form>
+{% endblock %}
