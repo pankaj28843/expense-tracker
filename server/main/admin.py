@@ -2,6 +2,7 @@ from django.contrib import admin
 from main.models import *
 
 class ProjectInline(admin.TabularInline):
+
     model = Project
     extra = 2
 
@@ -22,6 +23,7 @@ class OrganisationAdmin(admin.ModelAdmin):
     #date_hierarchy = 'time'
 
 class LocationAdmin(admin.ModelAdmin):
+
     fieldsets = [
             (None, {
                 'fields':['title'],
@@ -50,6 +52,13 @@ class CategoryAdmin(admin.ModelAdmin):
     #date_hierarchy = 'time'
 
 class ExpenseAdmin(admin.ModelAdmin):
+    def queryset(self, request):
+        qs = super(ExpenseAdmin, self).queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(type='Official', 
+                         token__organisation__in=request.user.organisation_set.all())
+
     fieldsets = [
             (None, {
                 'fields':['user' , 'organisation', 'type', 'amount', 'location',

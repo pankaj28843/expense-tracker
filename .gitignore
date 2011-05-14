@@ -3,3 +3,4 @@
 *.class
 server/settings.py
 server/static-deploy
+server/*.sqlite
