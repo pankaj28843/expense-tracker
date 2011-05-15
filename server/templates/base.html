@@ -25,10 +25,12 @@
             <div id="header">
                 <h1><a href="/">Expense Tracker</a></h1>
                 <ul id = "nav">
-                    <li><a href="/">Home</a></li>
-                    <!--<li><a href="/">Contact</a></li>-->
+                    <!--
+                       -<li><a href="/">Home</a></li>
+                       -->
                     {% if user.is_authenticated %}
-                    <!--<li><a href="/">Account</a></li>-->
+                    <li>{{ user.get_full_name|default:user.username|title }} | </li>
+                    <li><a href="{% url account %}">Account</a></li>
                     <li><a href="{% url logout %}?next=/">Logout</a></li>
                     {% if request.user.is_staff %}<li><a href="{% url admin:index %}">Admin</a></li>{% endif %}
                     {% else %}
