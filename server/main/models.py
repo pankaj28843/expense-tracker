@@ -70,6 +70,7 @@ class Expense(models.Model):
     bill_id = models.CharField(max_length=100)
     bill_image = models.ImageField(upload_to='bills/', blank=True, null=True)
     add_time = models.DateTimeField(auto_now_add=True)
+    time = models.DateTimeField()
 
     class Meta:
         get_latest_by = 'add_time'
@@ -119,7 +120,7 @@ def get_sync_data(auth_token):
     categories = get_list(Category.objects.all())
     projects = get_list(organisation.project_set.all())
     project_ids = get_list(organisation.project_set.all(), 'id')
-    locations = get_list(organisation.locations.all())
+    locations = get_list(Location.objects.all())
 
     bills_count = Expense.objects.filter(token=auth_token,
                                          billed=True).count()

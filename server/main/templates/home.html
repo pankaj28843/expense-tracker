@@ -18,7 +18,7 @@
 <table width="80%">
     <tr><th>Amount</th><th>Type</th><th>Organisation</th><th>Location</th><th>Time</th></tr>
     {% for expense in expenses %}
-    <tr><td>{{ expense.amount }}</td><td>{{ expense.get_type_display }}</td><td>{{ expense.organisation }}</td><td>{{ expense.location }}</td><td>{{ expense.add_time }}</td></tr>
+    <tr><td>{{ expense.amount }}</td><td>{{ expense.get_type_display }}</td><td>{{ expense.organisation }}</td><td>{{ expense.location }}</td><td>{{ expense.time }}</td></tr>
     {% empty %}
     <td>No expenses</td></tr>
     {% endfor %}

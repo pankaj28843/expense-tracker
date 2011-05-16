@@ -5,9 +5,11 @@ from django.template import RequestContext
 from django.utils import simplejson
 
 from django.contrib.auth.models import User, check_password
+
 from main.models import *
 from main.forms import ExpenseForm
 
+from datetime import datetime
 import settings
 
 def home(request):
@@ -19,6 +21,7 @@ def home(request):
             if request.POST['type']=='Official':
                 form.fields['project'].required = True
                 form.fields['category'].required = True
+                print form.fields['time']
 
             if form.is_valid():
                 expense = form.save(commit=False)
@@ -87,6 +90,7 @@ def add_expense(request):
                 'category':get_by_title(Category, exp_q[5]),
                 'billed': True if exp_q[6] else False,
                 'bill_id': exp_q[6],
+                'time': datetime.fromtimestamp(float(exp_q[7])),
                 }
         expense = Expense.objects.create(**exp_dict)
         expenses.append(expense)
