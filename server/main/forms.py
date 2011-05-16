@@ -10,7 +10,7 @@ class ExpenseForm(forms.ModelForm):
     project = forms.ModelChoiceField(queryset=Project.objects.all(), 
                                      required=False,)
     category = forms.ModelChoiceField(queryset=Category.objects.all(),
-                                      required=False,)
+                                      required=True,)
     time = forms.DateTimeField(initial=datetime.now(),
                                widget=forms.SplitDateTimeWidget())
 
@@ -22,7 +22,7 @@ class ExpenseForm(forms.ModelForm):
 
     class Meta:
         model = Expense
-        fields = ('amount', 'location', 'type', 'project', 'category',
+        fields = ('amount', 'location', 'type', 'category', 'project',
                   'billed', 'bill_image', 'time')
 
     def __init__(self, *args, **kwargs):

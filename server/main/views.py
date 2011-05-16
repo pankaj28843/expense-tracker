@@ -20,13 +20,11 @@ def home(request):
             form = ExpenseForm(request.POST, request.FILES)
             if request.POST['type']=='Official':
                 form.fields['project'].required = True
-                form.fields['category'].required = True
                 print form.fields['time']
 
             if form.is_valid():
                 expense = form.save(commit=False)
                 token = AuthToken.objects.get_or_create(user=request.user,
-                                  organisation=Organisation.objects.get(pk=1),
                                   site_token=True)[0]
                 expense.token = token
                 if expense.billed:
@@ -44,6 +42,7 @@ def home(request):
                 latest = expenses.latest()
                 initial['location'] = latest.location
                 initial['type']=latest.type
+                initial['category']=latest.category
 
             except Expense.DoesNotExist:
                 pass
