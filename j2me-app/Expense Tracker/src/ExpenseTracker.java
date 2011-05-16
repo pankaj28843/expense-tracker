@@ -236,6 +236,9 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 				t.start();
 			} else if (mMainMenuList.getSelectedIndex() == 3) {
 				saveData();
+				if (billDetailsList == null) {
+					billDetailsList = "";
+				}
 				if (billDetailsList.length() > 0) {
 					Alert report = new Alert("Upload Local Data",
 							"Please upload your expenses before logging out.",
@@ -566,9 +569,13 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 	}
 
 	private void logout() {
-		authToken = null;
-		saveData();
-
+		authToken = "";
+		System.out.println("\n*** About to logout. ***\n");
+		mPreferences.put(kAuthToken, authToken);
+		try {
+			mPreferences.save();
+		} catch (RecordStoreException rse) {
+		}
 		System.out.println("\n*** Logged out Successfully. ***\n");
 	}
 
