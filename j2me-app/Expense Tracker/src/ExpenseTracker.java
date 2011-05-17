@@ -5,14 +5,13 @@ import javax.microedition.io.*;
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
 import javax.microedition.rms.*;
-import com.policyinnovations.expensetracker.*;
+import com.expensetracker.*;
 
 public class ExpenseTracker extends MIDlet implements CommandListener, Runnable {
 	private Command mExitCommand, mNextCommand, mBackCommand, mLoginCommand,
 			mCancelLoginCommand, mSelectMenuCommand, mSaveCommand;
 	private int mStep;
-	private DateField mDate;
-	private Form mAmountForm, mLoginForm, mProgressForm, mForm;
+	private Form mAmountForm, mLoginForm, mProgressForm;
 	private StringItem mProgressString;
 
 	private static final String kUserID = "userID";
@@ -32,7 +31,7 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 	private String userID, projectIDList, username, password, authToken,
 			tokenID, projectList, cityList, categoryList, lastBillNumber,
 			newBillNumber, lastSelectedProject, lastSelectedCity,
-			lastSelectedCategory, billDetailsList, timeStamp;
+			lastSelectedCategory, billDetailsList;
 
 	private Preferences mPreferences;
 
@@ -89,10 +88,10 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 
 				if (mPreferences.get(kBillDetailsList) != null) {
 					if (mPreferences.get(kBillDetailsList).length() > 5) {
-						lastBillNumber = new String(
-								mPreferences.get(kLastBillNumber));
-
 						/*
+						 * lastBillNumber = new String(
+						 * mPreferences.get(kLastBillNumber));
+						 * 
 						 * lastSelectedProject = new String(
 						 * mPreferences.get(kLastSelectedProject));
 						 * lastSelectedCity = new String(
@@ -292,7 +291,8 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			lastBillNumber = newBillNumber;
 			String bds;
 			try {
-				String timeStamp = Long.toString((long)System.currentTimeMillis()/1000);
+				String timeStamp = Long.toString((long) System
+						.currentTimeMillis() / 1000);
 				bds = new String(authToken + ","
 						+ URLEncoder.encode(city, "UTF-8") + "," + amount + ","
 						+ expenseType + ","
@@ -592,6 +592,7 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 
 		mPreferences.put(kLastSelectedProject, lastSelectedProject);
 		mPreferences.put(kLastSelectedCity, lastSelectedCity);
+		mPreferences.put(kLastSelectedCategory, lastSelectedCategory);
 		mPreferences.put(kLastBillNumber, lastBillNumber);
 		mPreferences.put(kBillDetailsList, billDetailsList);
 
@@ -685,15 +686,6 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			System.out.println(result);
 			break;
 		}
-	}
-
-	private Form createNewForm() {
-		mForm = new Form("Bill Details");
-		mForm.addCommand(mNextCommand);
-		mForm.addCommand(mBackCommand);
-		mForm.setCommandListener(this);
-		mStep += 1;
-		return mForm;
 	}
 
 	private void showNextListPage(List l) {
