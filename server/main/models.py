@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django import forms
 
-from random import randint
+from random import random
 from hashlib import sha1
 
 class Location(models.Model):
@@ -37,17 +37,16 @@ class Category(models.Model):
 
 class AuthToken(models.Model):
     user = models.ForeignKey(User)
-    organisation = models.ForeignKey(Organisation, default=1)
     key = models.CharField(max_length=400, editable=False)
     time = models.DateTimeField(auto_now_add=True)
     site_token = models.BooleanField(default=False, editable=False)
 
     def __unicode__(self):
-        return '%s - %s (%s)' % (self.user, self.organisation, self.id)
+        return '%s -%s' % (self.user, self.organisation, self.id)
 
     def set_key(self):
-        salt = randint(1, 99999)
-        string = '%s%s-%s' %(self.user.id, self.organisation, salt)
+        salt = random()
+        string = '%s%s-%s' %(self.user.username, self.user.password, salt)
         return sha1(string).hexdigest()
 
     def save(self, *args, **kwargs):
@@ -70,27 +69,28 @@ class Expense(models.Model):
     bill_id = models.CharField(max_length=100)
     bill_image = models.ImageField(upload_to='bills/', blank=True, null=True)
     add_time = models.DateTimeField(auto_now_add=True)
+    time = models.DateTimeField()
 
     class Meta:
         get_latest_by = 'add_time'
         ordering = ('-add_time',)
 
     def __unicode__(self):
-        return '%s spent %s %s (%s) at %s' %(
+        return '%s spent %s %s - %s at %s' %(
                 self.token.user, self.amount, self.get_type_string(),
-                self.token.organisation, self.location)
+                self.category, self.location)
 
     def get_type_string(self):
-        if self.type=='personal':
-            return 'as personal expense' %(self.token.organisation)
+        if self.type=='Personal':
+            return 'as personal expense'
         else:
-            return 'for %s - %s' %(self.project, self.category)
+            return 'for %s (%s)' %(self.project, self.project.organisation)
 
     def user(self):
         return self.token.user
 
     def organisation(self):
-        return self.token.organisation
+        return self.project.organisation if self.project else '-'*16
 
 def create_csv(*args):
     final_list = []
@@ -115,16 +115,18 @@ def get_by_title(model, title):
     return obj
 
 def get_sync_data(auth_token):
-    organisation = auth_token.organisation
+    user = auth_token.user
+    project_set = Project.objects.filter(
+        organisation__in=user.organisation_set.all())
     categories = get_list(Category.objects.all())
-    projects = get_list(organisation.project_set.all())
-    project_ids = get_list(organisation.project_set.all(), 'id')
-    locations = get_list(organisation.locations.all())
+    projects = get_list(project_set)
+    project_ids = get_list(project_set, 'id')
+    locations = get_list(Location.objects.all())
 
     bills_count = Expense.objects.filter(token=auth_token,
                                          billed=True).count()
 
-    data = create_csv(auth_token.user.id, auth_token.key, auth_token.id,
+    data = create_csv(user.id, auth_token.key, auth_token.id,
                       projects, project_ids, categories, locations,
                       bills_count)
     return data

@@ -62,22 +62,23 @@ class ExpenseAdmin(admin.ModelAdmin):
     fieldsets = [
             (None, {
                 'fields':['user' , 'organisation', 'type', 'amount', 'location',
-                          'add_time'],
+                          'category', 'time', 'add_time'],
             }),
             ('Meta', {
-                'fields': ['project', 'category', 'billed', 'bill_id', 'bill_image'],
+                'fields': ['project', 'billed', 'bill_id', 'bill_image'],
             },)
     ]
 
     readonly_fields = ('user', 'organisation', 'add_time')
     #filter_horizontal = (,)
-    list_display = ('user', 'organisation', 'amount', 'type', 'location', 'add_time')
-    list_filter = ['token__user__username', 'token__organisation__title',
+    list_display = ('user', 'organisation', 'amount', 'type', 'location',
+                    'category', 'time')
+    list_filter = ['token__user__username', 'project__organisation__title',
                    'location', 'category', 'project']
     list_select_related = True
-    search_fields = ['token__user__username', 'token__organisation__title',
+    search_fields = ['token__user__username', 'project__organisation__title',
                      'location__title', 'category__title', 'project__title']
-    date_hierarchy = 'add_time'
+    date_hierarchy = 'time'
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Location, LocationAdmin)
