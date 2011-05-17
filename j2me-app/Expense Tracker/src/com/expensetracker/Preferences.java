@@ -1,4 +1,4 @@
-package com.policyinnovations.expensetracker;
+package com.expensetracker;
 
 import java.util.*;
 import javax.microedition.lcdui.*;

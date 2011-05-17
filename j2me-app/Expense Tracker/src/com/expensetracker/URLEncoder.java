@@ -1,4 +1,4 @@
-package com.policyinnovations.expensetracker;
+package com.expensetracker;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

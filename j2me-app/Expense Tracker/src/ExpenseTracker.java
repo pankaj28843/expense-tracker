@@ -5,6 +5,8 @@ import javax.microedition.io.*;
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
 import javax.microedition.rms.*;
+import javax.microedition.location.*;
+
 import com.expensetracker.*;
 
 public class ExpenseTracker extends MIDlet implements CommandListener, Runnable {
@@ -37,15 +39,14 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 
 	private TextField mUsernameField, mPasswordField;
 	private List mExpenseTypeList;
-	private List mBillTypeList;
 	private List mProjectList;
 	private TextField mAmount;
 	private List mCityList;
 	private List mCategoryList;
 	private List mMainMenuList;
 
-	private String expenseType, billType = "", project, amount, city, category,
-			billID, details;
+	private String expenseType, project, amount, city, category, billID,
+			details;
 
 	public ExpenseTracker() {
 		try {
@@ -58,18 +59,14 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 		}
 		String[] stringMainMenu = { "Add New", "Upload Expenses",
 				"Update Lists", "Logout" };
-		// String[] stringMainMenu = { "Add New", "Upload Expenses",
-		// "Update Lists" };
 
 		mMainMenuList = new List("Main Menu", List.IMPLICIT, stringMainMenu,
 				null);
 
-		String[] stringExpenseTypes = { "Personal", "Official" };
-		String[] stringBillTypes = { "Billed", "Unbilled" };
+		String[] stringExpenseTypes = { "Personal", "Official Billed",
+				"Official Unbilled" };
 		mExpenseTypeList = new List("Select Expense Type", List.IMPLICIT,
 				stringExpenseTypes, null);
-		mBillTypeList = new List("Select Bill Type", List.IMPLICIT,
-				stringBillTypes, null);
 
 		String[] stringProjects = { "Project 1", "Project 2" };
 		String[] stringCities = { "Delhi", "hyderabad" };
@@ -88,21 +85,14 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 
 				if (mPreferences.get(kBillDetailsList) != null) {
 					if (mPreferences.get(kBillDetailsList).length() > 5) {
-						/*
-						 * lastBillNumber = new String(
-						 * mPreferences.get(kLastBillNumber));
-						 * 
-						 * lastSelectedProject = new String(
-						 * mPreferences.get(kLastSelectedProject));
-						 * lastSelectedCity = new String(
-						 * mPreferences.get(kLastSelectedCity));
-						 * lastSelectedCategory = new String(
-						 * mPreferences.get(kLastSelectedCategory));
-						 */
-						lastSelectedProject = new String("");
-						lastSelectedCity = new String("");
-						lastSelectedCategory = new String("");
-
+						lastBillNumber = new String(
+								mPreferences.get(kLastBillNumber));
+						lastSelectedProject = new String(
+								mPreferences.get(kLastSelectedProject));
+						lastSelectedCity = new String(
+								mPreferences.get(kLastSelectedCity));
+						lastSelectedCategory = new String(
+								mPreferences.get(kLastSelectedCategory));
 						billDetailsList = new String(
 								mPreferences.get(kBillDetailsList));
 					}
@@ -166,22 +156,29 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 	}
 
 	public void startApp() {
-		System.out.println("\n*** Looks ok till here ***\n");
 		if (mPreferences.get(kAuthToken) == null) {
 			Display.getDisplay(this).setCurrent(mLoginForm);
 		} else if (mPreferences.get(kAuthToken).length() < 10) {
 			Display.getDisplay(this).setCurrent(mLoginForm);
 		} else {
-
-			/*
-			 * if (lastSelectedProject != "") mProjectList.setSelectedIndex(
-			 * getArrayIndex(split(projectList, ","), lastSelectedProject),
-			 * true); if (lastSelectedCity != "") mCityList.setSelectedIndex(
-			 * getArrayIndex(split(cityList, ","), lastSelectedCity), true); if
-			 * (lastSelectedCategory != "") mCategoryList.setSelectedIndex(
-			 * getArrayIndex(split(categoryList, ","), lastSelectedCategory),
-			 * true);
-			 */
+			if (lastSelectedProject != "") {
+				int selProjectIndex = getArrayIndex(split(projectList, ","),
+						lastSelectedProject);
+				mProjectList.setSelectedIndex(selProjectIndex, true);
+			}
+			if (lastSelectedCity != "") {
+				String[] array = split(cityList, ",");
+				for (int i = 0; i < array.length; i++) {
+					if (array[i].equals(lastSelectedCity))
+						System.out.println(array[i]);
+				}
+				int selCityIndex = getArrayIndex(split(cityList, ","),
+						lastSelectedCity);
+				int selCategoryIndex = getArrayIndex(split(categoryList, ","),
+						lastSelectedCategory);
+				mCityList.setSelectedIndex(selCityIndex, true);
+				mCategoryList.setSelectedIndex(selCategoryIndex, true);
+			}
 			Display.getDisplay(this).setCurrent(mMainMenuList);
 		}
 	}
@@ -190,8 +187,6 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 	}
 
 	public void destroyApp(boolean unconditional) {
-		// Save the userID, username, authToken, projectList, cityList,
-		// categoryList.
 		saveData();
 		notifyDestroyed();
 	}
@@ -207,11 +202,10 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			if (mMainMenuList.getSelectedIndex() == 0) {
 				mStep = 0;
 				showNextListPage(mExpenseTypeList);
-				System.out.println("\n*** Expense type ***\n");
 			} else if (mMainMenuList.getSelectedIndex() == 1) {
 				if (billDetailsList == null) {
-					Alert report = new Alert("Uploading ...",
-							"Nothing to upload.", null, null);
+					Alert report = new Alert("Uploading", "Nothing to upload.",
+							null, null);
 					report.setTimeout(Alert.FOREVER);
 					Display.getDisplay(this).setCurrent(report, mMainMenuList);
 					return;
@@ -220,7 +214,7 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 				mProgressForm.removeCommand(mSaveCommand);
 				mProgressForm.removeCommand(mCancelLoginCommand);
 				mProgressString
-						.setText("Uploading expenses stored in locally your device.");
+						.setText("Uploading expenses stored locally in your device.");
 				Display.getDisplay(this).setCurrent(mProgressForm);
 				Thread t = new Thread(this);
 				t.start();
@@ -261,29 +255,25 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 				mStep = 1;
 				return;
 			} else if (mStep == 3) {
-				Display.getDisplay(this).setCurrent(mBillTypeList);
-				mStep = 2;
-				return;
-			} else if (mStep == 4) {
 				if (expenseType == "Personal") {
 					Display.getDisplay(this).setCurrent(mExpenseTypeList);
 					mStep = 1;
 					return;
 				}
 				Display.getDisplay(this).setCurrent(mProjectList);
+				mStep = 2;
+				return;
+			} else if (mStep == 4) {
+				Display.getDisplay(this).setCurrent(mCityList);
 				mStep = 3;
 				return;
 			} else if (mStep == 5) {
-				Display.getDisplay(this).setCurrent(mCityList);
-				mStep = 4;
-				return;
-			} else if (mStep == 6) {
 				Display.getDisplay(this).setCurrent(mAmountForm);
-				mStep = 5;
+				mStep = 4;
 				return;
 			} else {
 				Display.getDisplay(this).setCurrent(mCategoryList);
-				mStep = 6;
+				mStep = 5;
 				return;
 			}
 
@@ -307,7 +297,8 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			} else {
 				billDetailsList = bds;
 			}
-			System.out.println("\nBillDetailsList - " + billDetailsList + "\n");
+			// System.out.println("\nBillDetailsList - " + billDetailsList +
+			// "\n");
 			saveData();
 			Display.getDisplay(this).setCurrent(mMainMenuList);
 			saveData();
@@ -356,10 +347,8 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			Display.getDisplay(this).setCurrent(mMainMenuList);
 			return;
 		}
-
 		username = mUsernameField.getString();
 		password = mPasswordField.getString();
-
 		try {
 			login();
 			mPreferences.put(kUserID, userID);
@@ -394,9 +383,9 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 	private void login() throws IOException {
 		HttpConnection hc = null;
 		InputStream in = null;
-
 		try {
-			String baseURL = "http://xtrack.ep.io/mobile-login/";
+			String baseURL = "http://192.168.1.3:8000/mobile-login/";
+			//String baseURL = "http://xtrack.ep.io/mobile-login/";
 			String url = baseURL + "?u=" + URLEncoder.encode(username, "UTF-8")
 					+ "&p=" + URLEncoder.encode(password, "UTF-8");
 			System.out.println(url);
@@ -414,7 +403,6 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 
 			hc.setRequestProperty("Connection", "close");
 			in = hc.openInputStream();
-
 			mProgressString.setText("Reading...");
 
 			int length = 0;
@@ -424,7 +412,7 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 				details += new String(buffer, 0, length);
 			}
 
-			System.out.println(details);
+			// System.out.println(details);
 			String[] temp = split(details, "|");
 			if (temp.length < 7) {
 				Alert report = new Alert("Sorry",
@@ -474,10 +462,10 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			/*
 			 * if (hc.getResponseCode() != HttpConnection.HTTP_OK) { Alert
 			 * report = new Alert( "Sorry",
-			 * "Something went wrong and login failed. Please try again.", null,
-			 * null); report.setTimeout(Alert.FOREVER);
-			 * Display.getDisplay(this).setCurrent(report, mLoginForm); return;
-			 * }
+			 * "Something went wrong and upload failes.", null, null);
+			 * report.setTimeout(Alert.FOREVER);
+			 * Display.getDisplay(this).setCurrent(report, mMainMenuForm);
+			 * return; }
 			 */
 			hc.setRequestProperty("Connection", "close");
 			in = hc.openInputStream();
@@ -524,8 +512,8 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			/*
 			 * if (hc.getResponseCode() != HttpConnection.HTTP_OK) { Alert
 			 * report = new Alert( "Sorry",
-			 * "Something went wrong and login failed. Please try again.", null,
-			 * null); report.setTimeout(Alert.FOREVER);
+			 * "Something went wrong and lists updating failed. Please try again."
+			 * , null, null); report.setTimeout(Alert.FOREVER);
 			 * Display.getDisplay(this).setCurrent(report, mLoginForm); return;
 			 * }
 			 */
@@ -570,13 +558,42 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 
 	private void logout() {
 		authToken = "";
-		System.out.println("\n*** About to logout. ***\n");
+		// System.out.println("\n*** About to logout. ***\n");
 		mPreferences.put(kAuthToken, authToken);
 		try {
 			mPreferences.save();
 		} catch (RecordStoreException rse) {
 		}
-		System.out.println("\n*** Logged out Successfully. ***\n");
+		// System.out.println("\n*** Logged out Successfully. ***\n");
+	}
+
+	private void showLocation() throws LocationException {
+		// Set criteria for selecting a location provider:
+		// accurate to 500 meters horizontally
+		Location l;
+		Coordinates c;
+		Criteria cr = new Criteria();
+		cr.setHorizontalAccuracy(500);
+
+		// Get an instance of the provider
+		LocationProvider lp = LocationProvider.getInstance(cr);
+
+		// Request the location, setting a one-minute timeout
+		try {
+			l = lp.getLocation(60);
+			c = l.getQualifiedCoordinates();
+			if (c != null) {
+				// Use coordinate information
+				double lat = c.getLatitude();
+				double lon = c.getLongitude();
+				String latlon = new String("Lat - " + lat + "\nLon - " + lon);
+				Alert report = new Alert("Your Location ", latlon, null, null);
+				report.setTimeout(Alert.FOREVER);
+				Display.getDisplay(this).setCurrent(report, mMainMenuList);
+			}
+		} catch (InterruptedException ignored) {
+
+		}
 	}
 
 	private void saveData() {
@@ -609,50 +626,36 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 					.getSelectedIndex());
 			System.out.println("\n*** expense type sleected ***\n");
 			if (expenseType == "Personal") {
-				billType = "";
 				project = "";
 				lastSelectedProject = "";
-				/*
-				 * mBillTypeList.addCommand(mNextCommand);
-				 * mBillTypeList.addCommand(mBackCommand);
-				 * mBillTypeList.setCommandListener(this);
-				 * 
-				 * mProjectList.addCommand(mNextCommand);
-				 * mProjectList.addCommand(mBackCommand);
-				 * mProjectList.setCommandListener(this);
-				 */
-				mStep = 3;
+				mStep = 2;
 				showNextListPage(mCityList);
 				break;
 			}
-			System.out.println("\n*** bill type  ***\n");
-			showNextListPage(mBillTypeList);
-			break;
-
-		case 2:
-			billType = mBillTypeList
-					.getString(mBillTypeList.getSelectedIndex());
 			showNextListPage(mProjectList);
 			break;
-
-		case 3:
+		case 2:
 			project = mProjectList.getString(mProjectList.getSelectedIndex());
 			lastSelectedProject = project;
+			saveData();
 			showNextListPage(mCityList);
 			break;
-		case 4:
+		case 3:
 			city = mCityList.getString(mCityList.getSelectedIndex());
+			lastSelectedCity = city;
+			saveData();
 			Display.getDisplay(this).setCurrent(mAmountForm);
-			mStep = 5;
+			mStep = 4;
 			break;
-		case 5:
+		case 4:
 			amount = mAmount.getString();
 			showNextListPage(mCategoryList);
 			break;
-		case 6:
+		case 5:
 			category = mCategoryList
 					.getString(mCategoryList.getSelectedIndex());
 			lastSelectedCategory = category;
+			saveData();
 			mProgressForm = new Form("Bill Details");
 			mProgressForm.addCommand(mSaveCommand);
 			mProgressForm.addCommand(mBackCommand);
@@ -663,15 +666,15 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			Display.getDisplay(this).setCurrent(mProgressForm);
 
 			billID = "";
-			if (billType == "Billed") {
+			if (expenseType == "Official Billed") {
 				System.out.println("\n*** preveious last bill number -> ***\n"
 						+ lastBillNumber);
 				if (lastBillNumber == null)
 					lastBillNumber = "0";
 				int num = (int) Integer.parseInt(lastBillNumber.trim()) + 1;
 				newBillNumber = Integer.toString(num);
-				System.out.println("\n*** new last bill number -> ***\n"
-						+ newBillNumber);
+				// System.out.println("\n*** new last bill number -> ***\n" +
+				// newBillNumber);
 				billID = new String(
 						userID
 								+ split(projectIDList, ",")[mProjectList
@@ -679,11 +682,10 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 								+ lastBillNumber);
 			}
 			String result = new String("Bill ID - " + billID + "\nName - "
-					+ username + "\nExpense - " + expenseType
-					+ "\nBill Type - " + billType + "\nProject - " + project
-					+ "\nAmount - " + amount + "\nCity - " + city);
+					+ username + "\nExpense - " + expenseType + "\nProject - "
+					+ project + "\nAmount - " + amount + "\nCategory - " + category + "\nCity - " + city);
 			mProgressString.setText(result);
-			System.out.println(result);
+			//System.out.println(result);
 			break;
 		}
 	}
@@ -713,7 +715,7 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 		if (nodes.size() > 0) {
 			for (int loop = 0; loop < nodes.size(); loop++) {
 				result[loop] = (String) nodes.elementAt(loop);
-				System.out.println(result[loop]);
+				// System.out.println(result[loop]);
 			}
 		}
 		return result;
@@ -722,10 +724,10 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 	public int getArrayIndex(String[] stringArray, String s) {
 		int ArraySize = stringArray.length;// get the size of the array
 		for (int i = 0; i < ArraySize; i++) {
-			if (stringArray[i] == s) {
+			if (stringArray[i].equals(s)) {
 				return (i);
 			}
 		}
-		return (-1);// didn't find
+		return (-1);// could't find
 	}
 }
