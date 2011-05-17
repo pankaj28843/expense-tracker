@@ -2,9 +2,10 @@
 {% block heading %}{{ user.get_full_name|default:user.username|title }}{% endblock %}
 {% block content %}
 <table width="45%">
+    <tr><td>Name</td><td>{{ user.get_full_name }}</td></tr>
     <tr><td>Email</td><td>{{ user.email }}</td></tr>
     <tr><td>Organisations</td><td>{% for organisation in user.organisation_set.all %}{{ organisation }}</br>{% endfor %}</td></tr>
-    <tr><td><a href="{% url changepass %}">Change Password</a></td><td></td></tr>
+    <tr><td><a href="{% url edit-profile %}">Edit Profile</a></td><td><a href="{% url changepass %}">Change Password</a></td></tr>
 </form>
 </table>
 {% endblock %}

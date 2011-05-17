@@ -5,6 +5,7 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
+    ('Rohan Jain', 'crodjer@gmail.com'),
     # ('Your Name', 'your_email@example.com'),
 )
 
@@ -123,10 +124,12 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'main',
     'south',
+    'accounts',
 )
 
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+
+USERENA_MUGSHOT_DEFAULT = 'mm'
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to

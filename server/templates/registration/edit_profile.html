@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block heading %}Editing Profile{% endblock %}
+{% block content %}
+<form action="{% url edit-profile %}" method="post">
+    <table width="60%">
+        {% csrf_token %}
+        {{ form }}
+        <tr><td></td><td>&nbsp;</td></tr>
+        <tr><td width="30%"><a href="{% url account %}">View Profile</a></td><td><input type="submit" value="Update"/></td></tr>
+    </table>
+</form>
+{% endblock %}

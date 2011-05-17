@@ -78,6 +78,14 @@ form li{
     text-align:left;
 }
 
+.helptext{
+    color:#666;
+    font-size:10px;
+    margin:2px 0;
+    float:left;
+    line-height:11px;
+}
+
 #header{
     position:relative;
     padding: 8px 20px;

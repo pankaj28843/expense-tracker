@@ -7,6 +7,7 @@ function checkType(){
     }
     else{
         fields_parents.hide();
+        fields.val(false);
     }
 }
 checkType();

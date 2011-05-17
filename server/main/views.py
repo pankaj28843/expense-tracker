@@ -43,6 +43,7 @@ def home(request):
                 initial['location'] = latest.location
                 initial['type']=latest.type
                 initial['category']=latest.category
+                initial['project']=latest.project
 
             except Expense.DoesNotExist:
                 pass
