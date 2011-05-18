@@ -5,6 +5,9 @@ from django import forms
 from random import random
 from hashlib import sha1
 
+PERSONAL = 1
+OFFICIAL = 0
+
 class Location(models.Model):
     title = models.CharField(max_length=200, unique=True)
 
@@ -22,6 +25,10 @@ class Organisation(models.Model):
 class Project(models.Model):
     title = models.CharField(max_length=200, unique=True)
     organisation = models.ForeignKey(Organisation)
+
+    class Meta:
+        #ordering = ['title']
+        pass
 
     def __unicode__(self):
         return self.title
@@ -56,8 +63,8 @@ class AuthToken(models.Model):
 
 class Expense(models.Model):
     TYPE_CHOICES = (
-                ('Personal', 'Personal'),
-                ('Official', 'Official')
+                (PERSONAL, 'Personal'),
+                (OFFICIAL, 'Official')
             )
     project = models.ForeignKey(Project, blank=True, null=True)
     category = models.ForeignKey(Category, blank=True, null=True)
@@ -81,7 +88,7 @@ class Expense(models.Model):
                 self.category, self.location)
 
     def get_type_string(self):
-        if self.type=='Personal':
+        if self.type==PERSONAL:
             return 'as personal expense'
         else:
             return 'for %s (%s)' %(self.project, self.project.organisation)

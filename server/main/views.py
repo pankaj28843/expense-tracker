@@ -49,8 +49,9 @@ def home(request):
                 pass
 
             form = ExpenseForm(initial=initial)
+            form.update_querysets(request.user)
 
-        return render(request, 'home.html', {'expenses': expenses,
+        return render(request, 'main/home.html', {'expenses': expenses,
                                              'form':form})
 
     return render(request, 'home.html', {})
@@ -85,13 +86,14 @@ def add_expense(request):
                 'token':get_object_or_404(AuthToken, key=exp_q[0]),
                 'location':get_by_title(Location, exp_q[1]),
                 'amount': float(exp_q[2]),
-                'type':exp_q[3],
                 'project':get_by_title(Project, exp_q[4]),
                 'category':get_by_title(Category, exp_q[5]),
                 'billed': True if exp_q[6] else False,
                 'bill_id': exp_q[6],
                 'time': datetime.fromtimestamp(float(exp_q[7])),
                 }
+        exp_dict['type'] = OFFICIAL if exp_dict['project'] else PERSONAL
+
         expense = Expense.objects.create(**exp_dict)
         expenses.append(expense)
         response = create_csv(len(expenses))

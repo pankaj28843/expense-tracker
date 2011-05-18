@@ -2,7 +2,7 @@ function checkType(){
     var fields = $("#id_project, #id_billed, #id_bill_image");
     var type = $('#id_type').val();
     var fields_parents = fields.parent().parent();
-    if (type=='Official'){
+    if (type==0){
         fields_parents.show();
     }
     else{
