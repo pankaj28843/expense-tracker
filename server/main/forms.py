@@ -9,7 +9,8 @@ from datetime import datetime
 
 class ExpenseForm(forms.ModelForm):
     location = forms.ModelChoiceField(queryset=Location.objects.all(),)
-    project = forms.ModelChoiceField(queryset=Project.objects.all(),)
+    project = forms.ModelChoiceField(queryset=Project.objects.all(),
+                                     required=False)
     category = forms.ModelChoiceField(queryset=Category.objects.all(),
                                       required=True,)
     time = forms.DateTimeField(initial=datetime.now(),

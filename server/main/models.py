@@ -5,8 +5,8 @@ from django import forms
 from random import random
 from hashlib import sha1
 
-PERSONAL = 1
-OFFICIAL = 0
+PERSONAL = 'p'
+OFFICIAL = 'o'
 
 class Location(models.Model):
     title = models.CharField(max_length=200, unique=True)
@@ -73,7 +73,7 @@ class Expense(models.Model):
     billed = models.BooleanField(default=False)
     amount = models.FloatField()
     token = models.ForeignKey(AuthToken)
-    bill_id = models.CharField(max_length=100)
+    bill_id = models.CharField(max_length=100, blank=True, null=True)
     bill_image = models.ImageField(upload_to='bills/', blank=True, null=True)
     add_time = models.DateTimeField(auto_now_add=True)
     time = models.DateTimeField()
@@ -83,15 +83,7 @@ class Expense(models.Model):
         ordering = ('-add_time',)
 
     def __unicode__(self):
-        return '%s spent %s %s - %s at %s' %(
-                self.token.user, self.amount, self.get_type_string(),
-                self.category, self.location)
-
-    def get_type_string(self):
-        if self.type==PERSONAL:
-            return 'as personal expense'
-        else:
-            return 'for %s (%s)' %(self.project, self.project.organisation)
+        return '%s - %s' %(self.token.user, self.get_type_display())
 
     def user(self):
         return self.token.user

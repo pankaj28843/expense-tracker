@@ -18,9 +18,9 @@ def home(request):
 
         if request.method == 'POST':
             form = ExpenseForm(request.POST, request.FILES)
-            if request.POST['type']=='Official':
+
+            if request.POST['type'] == OFFICIAL:
                 form.fields['project'].required = True
-                print form.fields['time']
 
             if form.is_valid():
                 expense = form.save(commit=False)
