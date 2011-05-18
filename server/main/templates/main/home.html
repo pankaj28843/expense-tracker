@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ form.media.css }}
+{% endblock %}
+{% block heading %}
+{% endblock %}
+{% block content %}
+{% if request.user.is_authenticated %}
+<h3>Add Expense</h3>
+<form action = '/' method="post">
+    <table width="50%">
+        {% csrf_token %}
+        {{ form }}
+        <tr><td width="30%"></td><td><input type="submit" value="Add" /></td></tr>
+    </table>
+</form>
+{{ form.media.js }}
+</br>
+<h3>Your Expenses</h3>
+<table width="80%">
+    <tr><th>Amount</th><th>Type</th><th>Organisation</th><th>Location</th><th>Time</th></tr>
+    {% for expense in expenses %}
+    <tr><td>{{ expense.amount }}</td><td>{{ expense.get_type_display }}</td><td>{{ expense.organisation }}</td><td>{{ expense.location }}</td><td>{{ expense.time }}</td></tr>
+    {% empty %}
+    <td>No expenses</td></tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>Please <a href='{% url login %}'>login</a> to start tracking your expenses</p>
+<br/>
+For testing: User - test, Password - test
+{% endif %}
+{% endblock %}
