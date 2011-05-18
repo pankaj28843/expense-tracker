@@ -1,6 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import User
 from django import forms
+from django.core.urlresolvers import reverse
+
+from django.contrib.auth.models import User
 
 from random import random
 from hashlib import sha1
@@ -21,6 +23,9 @@ class Organisation(models.Model):
 
     def __unicode__(self):
         return self.title
+
+    def get_absolute_url(self):
+        return reverse('organisation', kwargs={'org_pk': self.pk})
 
 class Project(models.Model):
     title = models.CharField(max_length=200, unique=True)
@@ -77,6 +82,7 @@ class Expense(models.Model):
     bill_image = models.ImageField(upload_to='bills/', blank=True, null=True)
     add_time = models.DateTimeField(auto_now_add=True)
     time = models.DateTimeField()
+    description = models.TextField(blank=True, help_text="Enter extra details here, if any")
 
     class Meta:
         get_latest_by = 'add_time'

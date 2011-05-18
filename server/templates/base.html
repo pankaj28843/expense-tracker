@@ -41,7 +41,15 @@
             </div>
             {% block special-show %}{% endblock %}
             <div id="section">
+                <div id="submenu">
+                    Track Expenses:
+                    <a href="{% url home %}">Personal</a>
+                    {% for organisation in user.organisation_set.all %}
+                    | <a href="{{ organisation.get_absolute_url }}">{{ organisation }}</a>
+                    {% endfor %}
+                </div>
                 <h2>{% block heading %}{% endblock %}</h2>
+                </br>
                 {% block content %}
                 {% endblock %}
             </div>

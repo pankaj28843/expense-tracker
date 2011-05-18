@@ -4,57 +4,84 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template import RequestContext
 from django.utils import simplejson
 
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, check_password
 
 from main.models import *
-from main.forms import ExpenseForm
+from main.forms import PersonalExpenseForm, OfficialExpenseForm
 
 from datetime import datetime
 import settings
 
+@login_required
 def home(request):
-    if request.user.is_authenticated():
-        expenses = Expense.objects.filter(token__user=request.user)
+    expenses = Expense.objects.filter(token__user=request.user,
+                                      type=PERSONAL)
 
-        if request.method == 'POST':
-            form = ExpenseForm(request.POST, request.FILES)
+    if request.method == 'POST':
+        form = PersonalExpenseForm(request.POST, request.FILES)
 
-            if request.POST['type'] == OFFICIAL:
-                form.fields['project'].required = True
+        if form.is_valid():
+            expense = form.save(commit=False)
+            token = AuthToken.objects.get_or_create(user=request.user,
+                                                    site_token=True)[0]
+            expense.token = token
+            expense.save()
 
-            if form.is_valid():
-                expense = form.save(commit=False)
-                token = AuthToken.objects.get_or_create(user=request.user,
-                                  site_token=True)[0]
-                expense.token = token
-                if expense.billed:
-                    expense.bill_id = "%s%s%s%s"%(token.user.id,
-                                                  expense.project.id,
-                                                  expense.token.id,
-                                                  expenses.filter(token=token).count()+1)
-                expense.save()
+            return redirect('/')
+    else:
+        initial = {
+        }
+        try:
+            latest = expenses.latest()
+            initial['location'] = latest.location
+            initial['category']=latest.category
 
-                return redirect('/')
-        else:
-            initial = {
-            }
-            try:
-                latest = expenses.latest()
-                initial['location'] = latest.location
-                initial['type']=latest.type
-                initial['category']=latest.category
-                initial['project']=latest.project
+        except Expense.DoesNotExist:
+            pass
 
-            except Expense.DoesNotExist:
-                pass
+        form = PersonalExpenseForm(initial=initial)
 
-            form = ExpenseForm(initial=initial)
-            form.update_querysets(request.user)
-
-        return render(request, 'main/home.html', {'expenses': expenses,
+    return render(request, 'main/home.html', {'expenses': expenses,
                                              'form':form})
 
-    return render(request, 'home.html', {})
+@login_required
+def organisation(request, org_pk):
+    org = Organisation.objects.get(pk=org_pk)
+    expenses = Expense.objects.filter(token__user=request.user,
+                                      project__organisation=org)
+    if request.method == 'POST':
+        form = OfficialExpenseForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            expense = form.save(commit=False)
+            token = AuthToken.objects.get_or_create(user=request.user,
+                                                    site_token=True)[0]
+            expense.token = token
+            expense.save()
+
+            return redirect('/')
+    else:
+        initial = {
+        }
+        try:
+            latest = expenses.latest()
+            initial['location'] = latest.location
+            initial['category']=latest.category
+            initial['project']=latest.project
+
+        except Expense.DoesNotExist:
+            pass
+
+        form = OfficialExpenseForm(initial=initial)
+
+    form.update_querysets(org)
+
+    return render(request, 'main/organisation.html', {
+                                                'organisation':org,
+                                                'expenses':expenses,
+                                                'form':form,
+                                            })
 
 def mobile_login(request):
     username = request.REQUEST.get('u', False)

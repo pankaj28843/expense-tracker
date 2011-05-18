@@ -3,54 +3,38 @@ from django.contrib.admin.widgets import AdminSplitDateTime
 from django.forms import ModelChoiceField, ChoiceField
 from django.forms.models import ModelChoiceIterator
 
-from main.models import *
+from main.models import Expense, PERSONAL, OFFICIAL, Category, Location, \
+        Project
 
 from datetime import datetime
 
-class ExpenseForm(forms.ModelForm):
-    location = forms.ModelChoiceField(queryset=Location.objects.all(),)
-    project = forms.ModelChoiceField(queryset=Project.objects.all(),
-                                     required=False)
+class ExpenseMixin(forms.ModelForm):
     category = forms.ModelChoiceField(queryset=Category.objects.all(),
                                       required=True,)
     time = forms.DateTimeField(initial=datetime.now(),
                                widget=forms.SplitDateTimeWidget())
 
-    class Media:
-        css = {
-            'all':('css/add_form.css',),
-        }
-        js = ('js/add_form.js',)
+class PersonalExpenseForm(ExpenseMixin, forms.ModelForm):
+    type = forms.CharField(initial=PERSONAL, widget=forms.HiddenInput())
+    location = forms.ModelChoiceField(queryset=Location.objects.all(),)
+
+    class Meta:
+        model = Expense
+        fields=('amount', 'location', 'category', 'type', 'time', 'description')
+
+class OfficialExpenseForm(ExpenseMixin, forms.ModelForm):
+    type = forms.CharField(initial=OFFICIAL, widget=forms.HiddenInput())
+    project = forms.ModelChoiceField(queryset=Project.objects.all(),
+                                     required=False)
+
+    def update_querysets(self, org):
+        f = self.fields
+        f['project'].queryset = org.project_set.all()
+        self.fields = f
 
     class Meta:
         model = Expense
         fields = ('amount', 'location', 'type', 'category', 'project',
-                  'billed', 'bill_image', 'time')
+                  'billed', 'bill_image', 'time', 'description')
 
-    def __init__(self, *args, **kwargs):
-        return super(ExpenseForm, self).__init__(*args, **kwargs)
-
-    def update_querysets(self, user):
-        f = self.fields
-        f['project'].queryset = f['project'].queryset.filter(
-            organisation__in=user.organisation_set.all())
-        self.fields = f
-
-
-        #return (
-            #('Audio', (
-                    #('vinyl', 'Vinyl'),
-                    #('cd', 'CD'),
-                #)
-            #),
-            #('Video', (
-                    #('vhs', 'VHS Tape'),
-                    #('dvd', 'DVD'),
-                #)
-            #),
-            #('unknown', 'Unknown'),
-        #)
-
-    #def _set_chocies(self, value):
-        #pass
 
