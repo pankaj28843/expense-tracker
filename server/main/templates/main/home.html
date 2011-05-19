@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ form.media.css }}
+{% endblock %}
+{% block heading %}
+Personal Expenses
+<hr/>
+{% endblock %}
+{% block content %}
+<fieldset id=exp-form>
+<h3>Add</h3>
+<form action = '/' method="post">
+    <table>
+        {% csrf_token %}
+        {{ form }}
+        <tr><td width="30%"></td><td><input type="submit" value="Add" /></td></tr>
+    </table>
+</form>
+</fieldset>
+{{ form.media.js }}
+<table class="exp-his">
+    <tr><th width="125px"></th><th>Amount</th><th>Category</th><th>Location</th><th></th></tr>
+    {% for expense in expenses %}
+    <tr><td class="meta">{{ expense.time }}</td><td>{{ expense.amount }}</td><td>{{ expense.category }}</td><td>{{ expense.location }}</td><td></td></tr>
+    {% empty %}
+    <td>No expenses</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

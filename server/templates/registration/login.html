@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block heading %}Login{% endblock %}
 {% block content %}
+<p>Please <b>login</b> here to start tracking your expenses:</p>
 <form action="{% url login %}" method="post">
     {% csrf_token %}
     {{ form.as_p }}

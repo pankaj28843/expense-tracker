@@ -12,7 +12,7 @@
         <link  href="http://fonts.googleapis.com/css?family=Droid+Sans:regular,bold" rel="stylesheet" type="text/css" >
         <link rel="shortcut icon" href="{{ STATIC_URL }}img/favicon.ico" />
         <script type="text/javascript" src="{{ STATIC_URL }}js/head.min.js"></script>
-        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
 
         <!--
            -<script type="text/javascript">
@@ -41,7 +41,15 @@
             </div>
             {% block special-show %}{% endblock %}
             <div id="section">
+                <div id="submenu">
+                    Track Expenses:
+                    <a href="{% url home %}">Personal</a>
+                    {% for organisation in user.organisation_set.all %}
+                    | <a href="{{ organisation.get_absolute_url }}">{{ organisation }}</a>
+                    {% endfor %}
+                </div>
                 <h2>{% block heading %}{% endblock %}</h2>
+                </br>
                 {% block content %}
                 {% endblock %}
             </div>

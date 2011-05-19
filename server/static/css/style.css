@@ -16,13 +16,17 @@ html{
 
 body{
     background:#122e66;
-    min-width:750px;
+    min-width:920px;
     height:inherit;
 }
 
 th, td{
     text-align:left;
     padding: 1px 3px;
+}
+
+th{
+    vertical-align:top;
 }
 
 li{
@@ -48,6 +52,7 @@ select{
 input[type="text"], textarea, input[type="password"] {
     padding:3px 3px;
     border:1px solid #555;
+    width:160px;
 }
 
 input[type="submit"],button {
@@ -71,19 +76,61 @@ form li{
     list-style:none;
 }
 
+fieldset{
+    padding:2px 7px;
+}
+
+.exp-his{
+    width:65%;
+    font-size:13px;
+}
+
+.exp-his td{
+    width:80px;
+}
+
+.bg-1{
+    background:#aaa;
+}
+
+.bg-2{
+}
+
+#submenu{
+    float:right;
+}
+
+#submenu a, #submenu a:hover{
+    color:#000;
+}
+
+#exp-form{
+    float:right;
+    width:280px;
+    font-size:12px;
+}
+
+#exp-form textarea{
+    height:40px;
+}
+
 .errorlist {
     font-size:11px;
     color:red;
-    margin:-15px 0 -9px;
+    margin:-12px 0 0;
     text-align:left;
+    line-height:11px;
+}
+
+.helptext, .meta{
+    color:#666;
+    font-size:10px;
 }
 
 .helptext{
-    color:#666;
-    font-size:10px;
-    margin:2px 0;
-    float:left;
     line-height:11px;
+    float:left;
+    margin:2px 0;
 }
 
 #header{
@@ -136,7 +183,7 @@ form li{
 }
 
 #section{
-    padding:20px 10%;
+    padding:20px 20px;
     background:#fff url(../img/section-bg.png) repeat-x;
     min-height:550px;
     border-bottom:3px solid #2c3844;
