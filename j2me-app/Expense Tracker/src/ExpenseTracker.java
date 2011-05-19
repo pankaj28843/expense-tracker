@@ -86,25 +86,40 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 				cityList = new String(mPreferences.get(kCityList));
 				categoryList = new String(mPreferences.get(kCategoryList));
 
-				if (mPreferences.get(kBillDetailsList) != null) {
-					if (mPreferences.get(kBillDetailsList).length() > 5) {
-						lastBillNumber = new String(
-								mPreferences.get(kLastBillNumber));
-						lastSelectedProject = new String(
-								mPreferences.get(kLastSelectedProject));
-						lastSelectedCity = new String(
-								mPreferences.get(kLastSelectedCity));
-						lastSelectedCategory = new String(
-								mPreferences.get(kLastSelectedCategory));
-						billDetailsList = new String(
-								mPreferences.get(kBillDetailsList));
-					}
+				if (mPreferences.get(kLastSelectedCity) != null
+						|| mPreferences.get(kLastSelectedCity) != "") {
+					lastSelectedCity = new String(
+							mPreferences.get(kLastSelectedCity));
+					lastSelectedCategory = new String(
+							mPreferences.get(kLastSelectedCategory));
 				} else {
-					lastBillNumber = "0";
-					lastSelectedProject = "";
 					lastSelectedCity = "";
 					lastSelectedCategory = "";
+				}
+				
+				if (mPreferences.get(kLastSelectedProject) != null
+						|| mPreferences.get(kLastSelectedProject) != "") {
+					lastSelectedProject = new String(
+							mPreferences.get(kLastSelectedProject));
+				}
+				else {
+					lastSelectedProject = "";
+				}
+				
+				if (mPreferences.get(kBillDetailsList) != null
+						|| mPreferences.get(kBillDetailsList) != "") {
+					billDetailsList = new String(mPreferences.get(kBillDetailsList));
+				}
+				else {
 					billDetailsList = "";
+				}
+				
+				if (mPreferences.get(kLastBillNumber) != null
+						|| mPreferences.get(kLastBillNumber) != "") {
+					lastBillNumber = new String(mPreferences.get(kLastBillNumber));
+				}
+				else {
+					lastBillNumber = "";
 				}
 
 				stringProjects = split(projectList, ",");
@@ -304,7 +319,6 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			System.out.println("\nBillDetailsList - " + billDetailsList + "\n");
 			saveData();
 			Display.getDisplay(this).setCurrent(mMainMenuList);
-			saveData();
 		} else if (c == mExitCommand) {
 			saveData();
 			notifyDestroyed();
@@ -534,7 +548,11 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			System.out.println(url);
 			mProgressString.setText("Connecting...");
 			hc = (HttpConnection) Connector.open(url);
-
+			
+			response_code = hc.getResponseCode();
+			System.out
+			.println("\nHTTP Response Code - " + response_code + "\n");
+			
 			// hc.setRequestProperty("Connection", "close");
 			in = hc.openInputStream();
 			if (response_code != 200) {
@@ -663,8 +681,6 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			if (expenseType == "Official Billed") {
 				System.out.println("\n*** preveious last bill number -> ***\n"
 						+ lastBillNumber);
-				if (lastBillNumber == null)
-					lastBillNumber = "0";
 				int num = (int) Integer.parseInt(lastBillNumber.trim()) + 1;
 				newBillNumber = Integer.toString(num);
 				// System.out.println("\n*** new last bill number -> ***\n" +
@@ -673,7 +689,7 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 						userID
 								+ split(projectIDList, ",")[mProjectList
 										.getSelectedIndex()] + tokenID
-								+ lastBillNumber);
+								+ newBillNumber);
 			}
 			String result = new String("Bill ID - " + billID + "\nName - "
 					+ username + "\nExpense - " + expenseType + "\nProject - "
