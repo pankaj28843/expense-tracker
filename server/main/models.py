@@ -18,8 +18,9 @@ class Location(models.Model):
 
 class Organisation(models.Model):
     title = models.CharField(max_length=200, unique=True)
-    admins = models.ManyToManyField(User, related_name='managed')
-    users = models.ManyToManyField(User)
+    admins = models.ManyToManyField(User, related_name='managed',
+                                    blank=True)
+    users = models.ManyToManyField(User, blank=True)
     locations = models.ManyToManyField(Location)
 
     def __unicode__(self):
@@ -55,7 +56,10 @@ class AuthToken(models.Model):
     site_token = models.BooleanField(default=False, editable=False)
 
     def __unicode__(self):
-        return '%s -%s' % (self.user, self.organisation, self.id)
+        return '%s - %s token (%s)' % (self.user, self.type(), self.id)
+
+    def type(self):
+        return 'On site' if self.site_token else 'Mobile device'
 
     def set_key(self):
         salt = random()
@@ -122,12 +126,14 @@ def get_by_title(model, title):
 
 def get_sync_data(auth_token):
     user = auth_token.user
+    orgs = user.organisation_set.all()
     project_set = Project.objects.filter(
-        organisation__in=user.organisation_set.all())
+        organisation__in=orgs)
+    location_set = Location.objects.filter(organisation__in=orgs).distinct('title')
     categories = get_list(Category.objects.all())
     projects = get_list(project_set)
     project_ids = get_list(project_set, 'id')
-    locations = get_list(Location.objects.all())
+    locations = get_list(location_set)
 
     bills_count = Expense.objects.filter(token=auth_token,
                                          billed=True).count()

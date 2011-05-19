@@ -3,7 +3,6 @@ from main.models import *
 from main.forms import OrgAddForm
 
 class ProjectInline(admin.TabularInline):
-
     model = Project
     extra = 2
 
@@ -105,7 +104,8 @@ class ExpenseAdmin(admin.ModelAdmin):
                           'category', 'time', 'add_time'],
             }),
             ('Meta', {
-                'fields': ['project', 'billed', 'bill_id', 'bill_image'],
+                'fields': ['project', 'billed', 'bill_id', 'bill_image',
+                           'description'],
             },)
     ]
 
@@ -115,7 +115,8 @@ class ExpenseAdmin(admin.ModelAdmin):
                           'category', 'time', 'add_time'],
             }),
             ('Meta', {
-                'fields': ['billed', 'bill_id', 'bill_image'],
+                'fields': ['billed', 'bill_id', 'bill_image',
+                           'description'],
             },)
     ]
 
@@ -135,7 +136,6 @@ class ExpenseAdmin(admin.ModelAdmin):
             return super(ExpenseAdmin, self).get_fieldsets(request, obj)
         else:
             return self.edit_fieldset
-
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Location, LocationAdmin)
