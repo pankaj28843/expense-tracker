@@ -5,11 +5,14 @@ import javax.microedition.io.*;
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
 import javax.microedition.rms.*;
-import javax.microedition.location.*;
 
 import com.expensetracker.*;
 
 public class ExpenseTracker extends MIDlet implements CommandListener, Runnable {
+	private static final String domainName = "http://xtrack.ep.io"; // Should
+																	// not end
+																	// with
+																	// slash.
 	private Command mExitCommand, mNextCommand, mBackCommand, mLoginCommand,
 			mCancelLoginCommand, mSelectMenuCommand, mSaveCommand;
 	private int mStep;
@@ -164,20 +167,21 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			if (lastSelectedProject != "") {
 				int selProjectIndex = getArrayIndex(split(projectList, ","),
 						lastSelectedProject);
-				mProjectList.setSelectedIndex(selProjectIndex, true);
+				if (selProjectIndex != -1) {
+					mProjectList.setSelectedIndex(selProjectIndex, true);
+				}
 			}
 			if (lastSelectedCity != "") {
-				String[] array = split(cityList, ",");
-				for (int i = 0; i < array.length; i++) {
-					if (array[i].equals(lastSelectedCity))
-						System.out.println(array[i]);
-				}
 				int selCityIndex = getArrayIndex(split(cityList, ","),
 						lastSelectedCity);
 				int selCategoryIndex = getArrayIndex(split(categoryList, ","),
 						lastSelectedCategory);
-				mCityList.setSelectedIndex(selCityIndex, true);
-				mCategoryList.setSelectedIndex(selCategoryIndex, true);
+				if (selCityIndex != -1) {
+					mCityList.setSelectedIndex(selCityIndex, true);
+				}
+				if (selCategoryIndex != -1) {
+					mCategoryList.setSelectedIndex(selCategoryIndex, true);
+				}
 			}
 			Display.getDisplay(this).setCurrent(mMainMenuList);
 		}
@@ -203,7 +207,7 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 				mStep = 0;
 				showNextListPage(mExpenseTypeList);
 			} else if (mMainMenuList.getSelectedIndex() == 1) {
-				if (billDetailsList == null) {
+				if (billDetailsList == null || billDetailsList == "") {
 					Alert report = new Alert("Uploading", "Nothing to upload.",
 							null, null);
 					report.setTimeout(Alert.FOREVER);
@@ -280,25 +284,24 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 		} else if (c == mSaveCommand) {
 			lastBillNumber = newBillNumber;
 			String bds;
-			try {
-				String timeStamp = Long.toString((long) System
-						.currentTimeMillis() / 1000);
-				bds = new String(authToken + ","
-						+ URLEncoder.encode(city, "UTF-8") + "," + amount + ","
-						+ expenseType + ","
-						+ URLEncoder.encode(project, "UTF-8") + ","
-						+ URLEncoder.encode(category, "UTF-8") + "," + billID
-						+ "," + timeStamp);
-			} catch (IOException ignored) {
-				bds = "";
+			if (expenseType.equals("Personal")) {
+			} else {
+				expenseType = "Official";
 			}
+
+			String timeStamp = Long
+					.toString((long) System.currentTimeMillis() / 1000);
+
+			bds = new String(authToken + "," + city + "," + amount + ","
+					+ expenseType + "," + project + "," + category + ","
+					+ billID + "," + timeStamp);
+
 			if (billDetailsList != null && billDetailsList.length() > 5) {
 				billDetailsList = billDetailsList + "|" + bds;
 			} else {
 				billDetailsList = bds;
 			}
-			// System.out.println("\nBillDetailsList - " + billDetailsList +
-			// "\n");
+			System.out.println("\nBillDetailsList - " + billDetailsList + "\n");
 			saveData();
 			Display.getDisplay(this).setCurrent(mMainMenuList);
 			saveData();
@@ -311,129 +314,145 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 	public void run() {
 		if (mMainMenuList.getSelectedIndex() == 1) {
 			try {
-				uploadExpenses();
+				int response_code = uploadExpenses();
+				if (response_code == 200) {
+					billDetailsList = "";
+					saveData();
+					Alert report = new Alert(
+							"Success",
+							"All expenses have been uploaded to web server successfully.",
+							null, null);
+					report.setTimeout(Alert.FOREVER);
+					Display.getDisplay(this).setCurrent(mMainMenuList);
+					return;
+				} else {
+					Alert report = new Alert("Sorry",
+							"Something went wrong and upload failed.", null,
+							null);
+					report.setTimeout(Alert.FOREVER);
+					Display.getDisplay(this).setCurrent(report, mMainMenuList);
+					return;
+				}
 			} catch (IOException ioe) {
-				Alert report = new Alert("Sorry",
-						"Something went wrong and upload failed.", null, null);
-				report.setTimeout(Alert.FOREVER);
-				Display.getDisplay(this).setCurrent(report, mMainMenuList);
 				return;
 			}
-			billDetailsList = "";
-			saveData();
-			Alert report = new Alert(
-					"Success",
-					"All expenses have been uploaded to web server successfully.",
-					null, null);
-			report.setTimeout(Alert.FOREVER);
-			Display.getDisplay(this).setCurrent(mMainMenuList);
-			return;
-		}
-		if (mMainMenuList.getSelectedIndex() == 2) {
+		} else if (mMainMenuList.getSelectedIndex() == 2) {
 			try {
-				updateLists();
+				int response_code = updateLists();
+				if (response_code == 200) {
+					Alert report = new Alert(
+							"Success",
+							"List of Projects, Cities and Categories have been updated successfully.",
+							null, null);
+					report.setTimeout(Alert.FOREVER);
+					Display.getDisplay(this).setCurrent(mMainMenuList);
+					return;
+				} else {
+					Alert report = new Alert("Sorry",
+							"Something went wrong and update failed.", null,
+							null);
+					report.setTimeout(Alert.FOREVER);
+					Display.getDisplay(this).setCurrent(report, mMainMenuList);
+					return;
+				}
 			} catch (IOException ioe) {
-				Alert report = new Alert("Sorry",
-						"Something went wrong and update failed.", null, null);
-				report.setTimeout(Alert.FOREVER);
-				Display.getDisplay(this).setCurrent(report, mMainMenuList);
 				return;
 			}
-			Alert report = new Alert(
-					"Success",
-					"List of Projects, Cities and Categories have been updates successfully.",
-					null, null);
-			report.setTimeout(Alert.FOREVER);
-			Display.getDisplay(this).setCurrent(mMainMenuList);
-			return;
-		}
-		username = mUsernameField.getString();
-		password = mPasswordField.getString();
-		try {
-			login();
-			mPreferences.put(kUserID, userID);
-			mPreferences.put(kProjectIDList, projectIDList);
-			mPreferences.put(kUsername, username);
-			mPreferences.put(kAuthToken, authToken);
-			mPreferences.put(kTokenID, tokenID);
-			mPreferences.put(kProjectList, projectList);
-			mPreferences.put(kCityList, cityList);
-			mPreferences.put(kCategoryList, categoryList);
+		} else {
+			username = mUsernameField.getString();
+			password = mPasswordField.getString();
 			try {
-				mPreferences.save();
-			} catch (RecordStoreException rse) {
+				int response_code = login();
+				if (response_code == 200) {
+					mPreferences.put(kUserID, userID);
+					mPreferences.put(kProjectIDList, projectIDList);
+					mPreferences.put(kUsername, username);
+					mPreferences.put(kAuthToken, authToken);
+					mPreferences.put(kTokenID, tokenID);
+					mPreferences.put(kProjectList, projectList);
+					mPreferences.put(kCityList, cityList);
+					mPreferences.put(kCategoryList, categoryList);
+					try {
+						mPreferences.save();
+					} catch (RecordStoreException rse) {
+					}
+				} else if (response_code == 404) {
+					Alert report = new Alert(
+							"Sorry",
+							"Username and Password didn't match. Please try again.",
+							null, null);
+					report.setTimeout(Alert.FOREVER);
+					Display.getDisplay(this).setCurrent(report, mLoginForm);
+				} else {
+					Alert report = new Alert("Sorry",
+							"Something went wrong and login failed.", null,
+							null);
+					report.setTimeout(Alert.FOREVER);
+					Display.getDisplay(this).setCurrent(report, mLoginForm);
+				}
+			} catch (IOException ioe) {
+				return;
 			}
-		} catch (IOException ioe) {
-			Alert report = new Alert("Sorry",
-					"Something went wrong and login failed.", null, null);
-			report.setTimeout(Alert.FOREVER);
-			Display.getDisplay(this).setCurrent(report, mLoginForm);
-			return;
+			mProjectList = new List("Select Project", List.IMPLICIT, split(
+					projectList, ","), null);
+			mCityList = new List("Select City", List.EXCLUSIVE, split(cityList,
+					","), null);
+			mCategoryList = new List("Select Category", List.IMPLICIT, split(
+					categoryList, ","), null);
+			Display.getDisplay(this).setCurrent(mMainMenuList);
+			mStep = 0;
 		}
-		mProjectList = new List("Select Project", List.IMPLICIT, split(
-				projectList, ","), null);
-		mCityList = new List("Select City", List.EXCLUSIVE,
-				split(cityList, ","), null);
-		mCategoryList = new List("Select Category", List.IMPLICIT, split(
-				categoryList, ","), null);
-		Display.getDisplay(this).setCurrent(mMainMenuList);
-		mStep = 1;
 	}
 
-	private void login() throws IOException {
+	private int login() throws IOException {
 		HttpConnection hc = null;
 		InputStream in = null;
+		int response_code = 0;
 		try {
-			String baseURL = "http://192.168.1.3:8000/mobile-login/";
-			//String baseURL = "http://xtrack.ep.io/mobile-login/";
+			String baseURL = domainName + "/mobile-login/";
 			String url = baseURL + "?u=" + URLEncoder.encode(username, "UTF-8")
 					+ "&p=" + URLEncoder.encode(password, "UTF-8");
 			System.out.println(url);
 			mProgressString.setText("Connecting...");
 			hc = (HttpConnection) Connector.open(url);
 
-			/*
-			 * if (hc.getResponseCode() != HttpConnection.HTTP_OK) { Alert
-			 * report = new Alert( "Sorry",
-			 * "Username and password don't match. Please try again.", null,
-			 * null); report.setTimeout(Alert.FOREVER);
-			 * Display.getDisplay(this).setCurrent(report, mLoginForm); return;
-			 * }
-			 */
-
-			hc.setRequestProperty("Connection", "close");
+			response_code = hc.getResponseCode();
+			System.out
+					.println("\nHTTP Response Code - " + response_code + "\n");
+			// System.out.println("\n***Reached here ***\n");
 			in = hc.openInputStream();
-			mProgressString.setText("Reading...");
+			// hc.setRequestProperty("Connection", "close");
+			if (response_code != 200) {
+				in.close();
+				hc.close();
+				System.out.println("\n***Could not login***\n");
+				return response_code;
+			} else {
+				mProgressString.setText("Reading...");
+				int length = 0;
+				byte buffer[] = new byte[200]; // arbitrary buffer size
+				details = new String();
+				while ((length = in.read(buffer)) != -1) {
+					details += new String(buffer, 0, length);
+				}
 
-			int length = 0;
-			byte buffer[] = new byte[200]; // arbitrary buffer size
-			details = new String();
-			while ((length = in.read(buffer)) != -1) {
-				details += new String(buffer, 0, length);
+				System.out.println(details);
+				String[] temp = split(details, "|");
+
+				userID = temp[0];
+				authToken = temp[1];
+				tokenID = temp[2];
+				projectList = temp[3];
+				projectIDList = temp[4];
+				categoryList = temp[5];
+				cityList = temp[6];
+				lastBillNumber = temp[7];
+
+				in.close();
+				hc.close();
+
+				return response_code;
 			}
-
-			// System.out.println(details);
-			String[] temp = split(details, "|");
-			if (temp.length < 7) {
-				Alert report = new Alert("Sorry",
-						"Username and password don't match. Please try again.",
-						null, null);
-				report.setTimeout(Alert.FOREVER);
-				Display.getDisplay(this).setCurrent(report, mLoginForm);
-				return;
-			}
-			userID = temp[0];
-			authToken = temp[1];
-			tokenID = temp[2];
-			projectList = temp[3];
-			projectIDList = temp[4];
-			categoryList = temp[5];
-			cityList = temp[6];
-			lastBillNumber = temp[7];
-
-			// Clean up.
-			in.close();
-			hc.close();
 		} finally {
 			try {
 				if (in != null)
@@ -445,45 +464,51 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 		}
 	}
 
-	private void uploadExpenses() throws IOException {
+	private int uploadExpenses() throws IOException {
 		HttpConnection hc = null;
 		InputStream in = null;
+		int response_code = 0;
 
 		mProgressForm = new Form("Uploading Data");
 		mProgressString = new StringItem(null, null);
 
 		try {
-			String baseURL = "http://xtrack.ep.io/add-expense/";
-			String url = baseURL + "?q=" + billDetailsList;
+			String baseURL = domainName + "/add-expense/";
+			String url = baseURL + "?q="
+					+ URLEncoder.encode(billDetailsList, "UTF-8");
 			System.out.println(url);
+
 			mProgressString.setText("Connecting...");
 			hc = (HttpConnection) Connector.open(url);
 
-			/*
-			 * if (hc.getResponseCode() != HttpConnection.HTTP_OK) { Alert
-			 * report = new Alert( "Sorry",
-			 * "Something went wrong and upload failes.", null, null);
-			 * report.setTimeout(Alert.FOREVER);
-			 * Display.getDisplay(this).setCurrent(report, mMainMenuForm);
-			 * return; }
-			 */
-			hc.setRequestProperty("Connection", "close");
+			response_code = hc.getResponseCode();
+			System.out
+					.println("\nHTTP Response Code - " + response_code + "\n");
+
+			// hc.setRequestProperty("Connection", "close");
 			in = hc.openInputStream();
+			if (response_code != 200) {
+				in.close();
+				hc.close();
+				System.out.println("\n***Could not login***\n");
+				return response_code;
+			} else {
+				mProgressString.setText("Processing...");
 
-			mProgressString.setText("Processing...");
+				int length = 0;
+				byte buffer[] = new byte[200]; // arbitrary buffer size
+				String response = new String();
+				while ((length = in.read(buffer)) != -1) {
+					response += new String(buffer, 0, length);
+				}
 
-			int length = 0;
-			byte buffer[] = new byte[200]; // arbitrary buffer size
-			String response = new String();
-			while ((length = in.read(buffer)) != -1) {
-				response += new String(buffer, 0, length);
+				lastBillNumber = response;
+				saveData();
+				in.close();
+				hc.close();
+				return response_code;
 			}
 
-			lastBillNumber = response;
-
-			// Clean up.
-			in.close();
-			hc.close();
 		} finally {
 			try {
 				if (in != null)
@@ -495,56 +520,54 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 		}
 	}
 
-	private void updateLists() throws IOException {
+	private int updateLists() throws IOException {
 		HttpConnection hc = null;
 		InputStream in = null;
+		int response_code = 0;
 
 		mProgressForm = new Form("Updating Lists");
 		mProgressString = new StringItem(null, null);
 
 		try {
-			String baseURL = "http://xtrack.ep.io/sync/";
+			String baseURL = domainName + "/sync/";
 			String url = baseURL + "?token=" + authToken;
 			System.out.println(url);
 			mProgressString.setText("Connecting...");
 			hc = (HttpConnection) Connector.open(url);
 
-			/*
-			 * if (hc.getResponseCode() != HttpConnection.HTTP_OK) { Alert
-			 * report = new Alert( "Sorry",
-			 * "Something went wrong and lists updating failed. Please try again."
-			 * , null, null); report.setTimeout(Alert.FOREVER);
-			 * Display.getDisplay(this).setCurrent(report, mLoginForm); return;
-			 * }
-			 */
-			hc.setRequestProperty("Connection", "close");
+			// hc.setRequestProperty("Connection", "close");
 			in = hc.openInputStream();
+			if (response_code != 200) {
+				in.close();
+				hc.close();
+				System.out.println("\n***Could not login***\n");
+				return response_code;
+			} else {
+				mProgressString.setText("Processing...");
+				int length = 0;
+				byte buffer[] = new byte[200]; // arbitrary buffer size
+				details = new String();
+				while ((length = in.read(buffer)) != -1) {
+					details += new String(buffer, 0, length);
+				}
 
-			mProgressString.setText("Processing...");
+				System.out.println(details);
+				String[] temp = split(details, "|");
+				userID = temp[0];
+				authToken = temp[1];
+				tokenID = temp[2];
+				projectList = temp[3];
+				projectIDList = temp[4];
+				categoryList = temp[5];
+				cityList = temp[6];
+				lastBillNumber = temp[7];
 
-			int length = 0;
-			byte buffer[] = new byte[200]; // arbitrary buffer size
-			details = new String();
-			while ((length = in.read(buffer)) != -1) {
-				details += new String(buffer, 0, length);
+				saveData();
+
+				in.close();
+				hc.close();
+				return response_code;
 			}
-
-			System.out.println(details);
-			String[] temp = split(details, "|");
-			userID = temp[0];
-			authToken = temp[1];
-			tokenID = temp[2];
-			projectList = temp[3];
-			projectIDList = temp[4];
-			categoryList = temp[5];
-			cityList = temp[6];
-			lastBillNumber = temp[7];
-
-			saveData();
-
-			// Clean up.
-			in.close();
-			hc.close();
 		} finally {
 			try {
 				if (in != null)
@@ -565,35 +588,6 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 		} catch (RecordStoreException rse) {
 		}
 		// System.out.println("\n*** Logged out Successfully. ***\n");
-	}
-
-	private void showLocation() throws LocationException {
-		// Set criteria for selecting a location provider:
-		// accurate to 500 meters horizontally
-		Location l;
-		Coordinates c;
-		Criteria cr = new Criteria();
-		cr.setHorizontalAccuracy(500);
-
-		// Get an instance of the provider
-		LocationProvider lp = LocationProvider.getInstance(cr);
-
-		// Request the location, setting a one-minute timeout
-		try {
-			l = lp.getLocation(60);
-			c = l.getQualifiedCoordinates();
-			if (c != null) {
-				// Use coordinate information
-				double lat = c.getLatitude();
-				double lon = c.getLongitude();
-				String latlon = new String("Lat - " + lat + "\nLon - " + lon);
-				Alert report = new Alert("Your Location ", latlon, null, null);
-				report.setTimeout(Alert.FOREVER);
-				Display.getDisplay(this).setCurrent(report, mMainMenuList);
-			}
-		} catch (InterruptedException ignored) {
-
-		}
 	}
 
 	private void saveData() {
@@ -683,9 +677,10 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			}
 			String result = new String("Bill ID - " + billID + "\nName - "
 					+ username + "\nExpense - " + expenseType + "\nProject - "
-					+ project + "\nAmount - " + amount + "\nCategory - " + category + "\nCity - " + city);
+					+ project + "\nAmount - " + amount + "\nCategory - "
+					+ category + "\nCity - " + city);
 			mProgressString.setText(result);
-			//System.out.println(result);
+			// System.out.println(result);
 			break;
 		}
 	}
