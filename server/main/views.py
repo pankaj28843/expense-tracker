@@ -16,7 +16,7 @@ import settings
 @login_required
 def home(request):
     expenses = Expense.objects.filter(token__user=request.user,
-                                      type=PERSONAL)
+                                      type=PERSONAL).order_by('-time')
 
     if request.method == 'POST':
         form = PersonalExpenseForm(request.POST, request.FILES)
@@ -49,7 +49,7 @@ def home(request):
 def organisation(request, org_pk):
     org = Organisation.objects.get(pk=org_pk)
     expenses = Expense.objects.filter(token__user=request.user,
-                                      project__organisation=org)
+                                      project__organisation=org).order_by('-time')
     if request.method == 'POST':
         form = OfficialExpenseForm(request.POST, request.FILES)
 

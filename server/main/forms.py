@@ -43,3 +43,8 @@ class OfficialExpenseForm(ExpenseMixin, forms.ModelForm):
 class OrgAddForm(forms.ModelForm):
     class Meta:
         model = Organisation
+        exclude = ('admins',)
+
+class AdminExpenseForm(forms.ModelForm):
+    class Meta:
+        model = Expense

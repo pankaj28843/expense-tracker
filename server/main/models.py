@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.db import models
 from django import forms
 from django.core.urlresolvers import reverse
@@ -9,6 +10,16 @@ from hashlib import sha1
 
 PERSONAL = 'p'
 OFFICIAL = 'o'
+
+class ExpenseManager(models.Manager):
+    def stats(self, currency):
+        categories = self.values_list('category__title', flat=True).distinct('category')
+        st = []
+        for category in categories:
+            st.append(('%s: %s %s') %(category, currency,
+                                     self.aggregate(models.Sum('amount'))['amount__sum']))
+
+        return ', '.join(st) or 'No expenses till now'
 
 class Location(models.Model):
     title = models.CharField(max_length=200, unique=True)
@@ -30,8 +41,17 @@ class Organisation(models.Model):
         return reverse('organisation', kwargs={'org_pk': self.pk})
 
 class Project(models.Model):
+    CURRENCIES = (
+        ('Rs.', 'Indian Rupees (Rs.)'),
+        (u'$', 'USD ($)'),
+        (u'£', 'Pound (£)'),
+        (u'€', 'Euro (€)'),
+        (u'¥', 'Yen (¥)'),
+    )
     title = models.CharField(max_length=200, unique=True)
     organisation = models.ForeignKey(Organisation)
+    currency = models.CharField(max_length=10, choices=CURRENCIES)
+    #budget = models.IntegerField()
 
     class Meta:
         #ordering = ['title']
@@ -39,6 +59,9 @@ class Project(models.Model):
 
     def __unicode__(self):
         return self.title
+
+    def expense_stats(self):
+        return self.expense_set.stats(self.currency)
 
 class Category(models.Model):
     title = models.CharField(max_length=200, unique=True)
@@ -89,9 +112,11 @@ class Expense(models.Model):
     time = models.DateTimeField()
     description = models.TextField(blank=True, help_text="Enter extra details here, if any")
 
+    objects = ExpenseManager()
+
     class Meta:
         get_latest_by = 'add_time'
-        ordering = ('-add_time',)
+        #ordering = ('-add_time',)
 
     def __unicode__(self):
         return '%s - %s' %(self.token.user, self.get_type_display())
