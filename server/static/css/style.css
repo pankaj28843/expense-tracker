@@ -59,6 +59,10 @@ input[type="submit"],button {
     padding: 2px 5px;
 }
 
+input[type="file"]{
+    width:160px;
+}
+
 ul, ol, p, h3, h4{
     margin:10px 0 5px;
 }
@@ -82,10 +86,11 @@ fieldset{
 
 .exp-his{
     width:65%;
+    font-size:13px;
 }
 
 .exp-his td{
-    width:100px;
+    width:80px;
 }
 
 .bg-1{
@@ -106,6 +111,7 @@ fieldset{
 #exp-form{
     float:right;
     width:280px;
+    font-size:12px;
 }
 
 #exp-form textarea{
@@ -115,8 +121,9 @@ fieldset{
 .errorlist {
     font-size:11px;
     color:red;
-    margin:-15px 0 -9px;
+    margin:-12px 0 0;
     text-align:left;
+    line-height:11px;
 }
 
 .helptext, .meta{

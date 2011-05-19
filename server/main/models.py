@@ -18,6 +18,7 @@ class Location(models.Model):
 
 class Organisation(models.Model):
     title = models.CharField(max_length=200, unique=True)
+    admins = models.ManyToManyField(User, related_name='managed')
     users = models.ManyToManyField(User)
     locations = models.ManyToManyField(Location)
 
@@ -72,7 +73,7 @@ class Expense(models.Model):
                 (OFFICIAL, 'Official')
             )
     project = models.ForeignKey(Project, blank=True, null=True)
-    category = models.ForeignKey(Category, blank=True, null=True)
+    category = models.ForeignKey(Category)
     location = models.ForeignKey(Location)
     type = models.CharField(max_length=400, choices=TYPE_CHOICES)
     billed = models.BooleanField(default=False)

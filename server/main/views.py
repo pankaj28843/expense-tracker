@@ -60,7 +60,7 @@ def organisation(request, org_pk):
             expense.token = token
             expense.save()
 
-            return redirect('/')
+            return redirect(org)
     else:
         initial = {
         }

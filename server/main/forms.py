@@ -4,7 +4,7 @@ from django.forms import ModelChoiceField, ChoiceField
 from django.forms.models import ModelChoiceIterator
 
 from main.models import Expense, PERSONAL, OFFICIAL, Category, Location, \
-        Project
+        Project, Organisation
 
 from datetime import datetime
 
@@ -32,9 +32,14 @@ class OfficialExpenseForm(ExpenseMixin, forms.ModelForm):
         f['project'].queryset = org.project_set.all()
         self.fields = f
 
+    class Media:
+        js = ['js/add_form.js']
+
     class Meta:
         model = Expense
         fields = ('amount', 'location', 'type', 'category', 'project',
                   'billed', 'bill_image', 'time', 'description')
 
-
+class OrgAddForm(forms.ModelForm):
+    class Meta:
+        model = Organisation

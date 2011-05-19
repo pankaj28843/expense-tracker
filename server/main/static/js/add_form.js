@@ -1,17 +1,17 @@
-function checkType(){
-    var fields = $("#id_project, #id_billed, #id_bill_image");
-    var type = $('#id_type').val();
-    var fields_parents = fields.parent().parent();
-    if (type=='o'){
-        fields_parents.show();
+function checkBilled(){
+    var field = $("#id_bill_image");
+    var checkbox = $('#id_billed');
+    var fieldParents = field.parent().parent();
+    if (checkbox.prop("checked")==true){
+        fieldParents.show();
     }
     else{
-        fields_parents.hide();
-        fields.val(false);
+        fieldParents.hide();
+        fieldParents.val(false);
     }
 }
-checkType();
+checkBilled();
 
-$("#id_type").change(function(){
-    checkType();
+$("#id_billed").change(function(){
+    checkBilled();
 });
