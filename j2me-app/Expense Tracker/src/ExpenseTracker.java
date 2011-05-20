@@ -96,30 +96,29 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 					lastSelectedCity = "";
 					lastSelectedCategory = "";
 				}
-				
+
 				if (mPreferences.get(kLastSelectedProject) != null
 						|| mPreferences.get(kLastSelectedProject) != "") {
 					lastSelectedProject = new String(
 							mPreferences.get(kLastSelectedProject));
-				}
-				else {
+				} else {
 					lastSelectedProject = "";
 				}
-				
+
 				if (mPreferences.get(kBillDetailsList) != null
 						|| mPreferences.get(kBillDetailsList) != "") {
-					billDetailsList = new String(mPreferences.get(kBillDetailsList));
-				}
-				else {
+					billDetailsList = new String(
+							mPreferences.get(kBillDetailsList));
+				} else {
 					billDetailsList = "";
 				}
-				
+
 				if (mPreferences.get(kLastBillNumber) != null
 						|| mPreferences.get(kLastBillNumber) != "") {
-					lastBillNumber = new String(mPreferences.get(kLastBillNumber));
-				}
-				else {
-					lastBillNumber = "";
+					lastBillNumber = new String(
+							mPreferences.get(kLastBillNumber));
+				} else {
+					lastBillNumber = "0";
 				}
 
 				stringProjects = split(projectList, ",");
@@ -160,11 +159,6 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 		mLoginForm.addCommand(mLoginCommand);
 		mLoginForm.addCommand(mExitCommand);
 		mLoginForm.setCommandListener(this);
-
-		mProgressForm = new Form("Login progress");
-		mProgressForm.addCommand(mCancelLoginCommand);
-		mProgressString = new StringItem(null, null);
-		mProgressForm.append(mProgressString);
 
 		mAmountForm = new Form("Bill Details");
 		mAmountForm.append(mAmount);
@@ -222,25 +216,31 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 				mStep = 0;
 				showNextListPage(mExpenseTypeList);
 			} else if (mMainMenuList.getSelectedIndex() == 1) {
-				if (billDetailsList == null || billDetailsList == "") {
+				if (billDetailsList == null) {
+					Alert report = new Alert("Uploading", "Nothing to upload.",
+							null, null);
+					report.setTimeout(Alert.FOREVER);
+					Display.getDisplay(this).setCurrent(report, mMainMenuList);
+					return;
+				} else if (billDetailsList.length() < 5) {
 					Alert report = new Alert("Uploading", "Nothing to upload.",
 							null, null);
 					report.setTimeout(Alert.FOREVER);
 					Display.getDisplay(this).setCurrent(report, mMainMenuList);
 					return;
 				}
-				mProgressForm.removeCommand(mBackCommand);
-				mProgressForm.removeCommand(mSaveCommand);
-				mProgressForm.removeCommand(mCancelLoginCommand);
+				mProgressForm = new Form("Uploading Data...");
+				mProgressString = new StringItem(null, null);
+				mProgressForm.append(mProgressString);
 				mProgressString
 						.setText("Uploading expenses stored locally in your device.");
 				Display.getDisplay(this).setCurrent(mProgressForm);
 				Thread t = new Thread(this);
 				t.start();
 			} else if (mMainMenuList.getSelectedIndex() == 2) {
-				mProgressForm.removeCommand(mBackCommand);
-				mProgressForm.removeCommand(mSaveCommand);
-				mProgressForm.removeCommand(mCancelLoginCommand);
+				mProgressForm = new Form("Updating Lists...");
+				mProgressString = new StringItem(null, null);
+				mProgressForm.append(mProgressString);
 				mProgressString
 						.setText("Updating list of Projects, Cities and Categories.");
 				Display.getDisplay(this).setCurrent(mProgressForm);
@@ -419,6 +419,11 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 	}
 
 	private int login() throws IOException {
+		mProgressForm = new Form("Looging in...");
+		mProgressForm.addCommand(mCancelLoginCommand);
+		mProgressString = new StringItem(null, null);
+		mProgressForm.append(mProgressString);
+
 		HttpConnection hc = null;
 		InputStream in = null;
 		int response_code = 0;
@@ -427,6 +432,7 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			String url = baseURL + "?u=" + URLEncoder.encode(username, "UTF-8")
 					+ "&p=" + URLEncoder.encode(password, "UTF-8");
 			System.out.println(url);
+
 			mProgressString.setText("Connecting...");
 			hc = (HttpConnection) Connector.open(url);
 
@@ -485,6 +491,7 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 
 		mProgressForm = new Form("Uploading Data");
 		mProgressString = new StringItem(null, null);
+		mProgressForm.append(mProgressString);
 
 		try {
 			String baseURL = domainName + "/add-expense/";
@@ -541,6 +548,7 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 
 		mProgressForm = new Form("Updating Lists");
 		mProgressString = new StringItem(null, null);
+		mProgressForm.append(mProgressString);
 
 		try {
 			String baseURL = domainName + "/sync/";
@@ -548,11 +556,11 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			System.out.println(url);
 			mProgressString.setText("Connecting...");
 			hc = (HttpConnection) Connector.open(url);
-			
+
 			response_code = hc.getResponseCode();
 			System.out
-			.println("\nHTTP Response Code - " + response_code + "\n");
-			
+					.println("\nHTTP Response Code - " + response_code + "\n");
+
 			// hc.setRequestProperty("Connection", "close");
 			in = hc.openInputStream();
 			if (response_code != 200) {
@@ -660,6 +668,14 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			mStep = 4;
 			break;
 		case 4:
+			if (mAmount.getString().trim().length() == 0) {
+				Alert report = new Alert("Alert", "Amount can't be nil.",
+						null, null);
+				report.setTimeout(Alert.FOREVER);
+				Display.getDisplay(this).setCurrent(report, mAmountForm);
+				mStep = 4;
+				break;
+			}
 			amount = mAmount.getString();
 			showNextListPage(mCategoryList);
 			break;
@@ -678,6 +694,11 @@ public class ExpenseTracker extends MIDlet implements CommandListener, Runnable 
 			Display.getDisplay(this).setCurrent(mProgressForm);
 
 			billID = "";
+			if (lastBillNumber == null)
+				lastBillNumber = "0";
+			else if (lastBillNumber.length() == 0)
+				lastBillNumber = "0";
+			newBillNumber = lastBillNumber;
 			if (expenseType == "Official Billed") {
 				System.out.println("\n*** preveious last bill number -> ***\n"
 						+ lastBillNumber);
