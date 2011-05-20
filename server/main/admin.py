@@ -87,18 +87,18 @@ class ProjectAdmin(admin.ModelAdmin):
 class ExpenseAdmin(admin.ModelAdmin):
     fieldsets = [
             (None, {
-                'fields':['user' , 'organisation', 'type', 'amount', 'location',
+                'fields':['user' , 'type', 'amount', 'location',
                           'category', 'time', 'add_time'],
             }),
             ('Meta', {
-                'fields': ['project', 'billed', 'bill_id', 'bill_image',
-                           'description'],
+                'fields': ['organisation', 'project', 'billed', 'bill_id', 
+                           'bill_image', 'description'],
             },)
     ]
 
     form = AdminExpenseForm
 
-    readonly_fields = ['user', 'organisation', 'add_time']
+    readonly_fields = ['user', 'organisation', 'add_time', 'billed', 'bill_id']
     #filter_horizontal = (,)
     list_display = ('user', 'organisation', 'amount', 'type', 'location',
                     'category', 'project', 'time')
