@@ -58,9 +58,11 @@ def organisation(request, org_pk):
             token = AuthToken.objects.get_or_create(user=request.user,
                                                     site_token=True)[0]
             expense.token = token
-            expense.bill_id = '%s%s%s%s' %(token.user.id, expense.project.id,
-                                           token.id,
-                                           expenses.filter(token=token).count()+1)
+            if expense.billed:
+                expense.bill_id = '%s%s%s%s' %(token.user.id, expense.project.id,
+                                               token.id,
+                                               expenses.filter(token=token,
+                                                               billed=True).count()+1)
             expense.save()
 
             return redirect(org)
