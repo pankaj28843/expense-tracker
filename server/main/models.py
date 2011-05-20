@@ -12,14 +12,21 @@ PERSONAL = 'p'
 OFFICIAL = 'o'
 
 class ExpenseManager(models.Manager):
-    def stats(self, currency):
-        categories = self.values_list('category__title', flat=True).distinct('category')
+    def stats(self, field):
+        field_values = self.values_list(field, flat=True).distinct(field)
         st = []
-        for category in categories:
-            st.append(('%s: %s %s') %(category, currency,
-                                     self.aggregate(models.Sum('amount'))['amount__sum']))
+        for val in field_values:
+            print val
+            qs = self.filter(**{field:val})
+            sum_amount = qs.aggregate(models.Sum('amount'))['amount__sum']
+            st.append((val, sum_amount))
 
-        return ', '.join(st) or 'No expenses till now'
+        return st
+
+    def total(self):
+        sum_amount = self.aggregate(models.Sum('amount'))['amount__sum']
+        return sum_amount
+
 
 class Location(models.Model):
     title = models.CharField(max_length=200, unique=True)
@@ -60,8 +67,27 @@ class Project(models.Model):
     def __unicode__(self):
         return self.title
 
-    def expense_stats(self):
-        return self.expense_set.stats(self.currency)
+    def _get_stats(self, field, *args):
+        stats = self.expense_set.stats(field)
+        stat_list = ['%s: %s%s' %(stat[0], self.currency, stat[1]) for stat in stats]
+        return ', '.join(stat_list) or 'No expense'
+
+    def category_stats(self):
+        return self._get_stats('category__title')
+
+    def user_stats(self):
+        return self._get_stats('token__user__username')
+
+    def location_stats(self):
+        return self._get_stats('location__title')
+
+    def total_spent(self):
+        total = self.expense_set.total()
+        if total:
+            return_string = '%s%s' %(self.currency, total)
+        else:
+            return_string = 'No expense till now'
+        return return_string
 
 class Category(models.Model):
     title = models.CharField(max_length=200, unique=True)

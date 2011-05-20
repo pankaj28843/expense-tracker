@@ -36,7 +36,6 @@ class ProjectInline(admin.TabularInline):
     extra = 1
 
     fields = ['title', 'currency']
-    readonly_fields = ('expense_stats',)
 
 class OrganisationAdmin(admin.ModelAdmin):
 
@@ -69,12 +68,13 @@ class ProjectAdmin(admin.ModelAdmin):
                 'fields':['title', 'organisation', 'currency'],
             }),
             ('Stats',{
-                'fields':['expense_stats']
+                'fields':['category_stats', 'user_stats', 'location_stats'],
             })
     ]
 
-    readonly_fields = ['organisation', 'expense_stats',]
-    list_display = ['title', 'organisation', 'currency', 'expense_stats']
+    readonly_fields = ['organisation', 'category_stats', 'user_stats',
+                       'location_stats']
+    list_display = ['title', 'organisation', 'currency', 'total_spent']
     list_filter = ['organisation', 'currency']
 
     def queryset(self, request):
@@ -101,7 +101,7 @@ class ExpenseAdmin(admin.ModelAdmin):
     readonly_fields = ['user', 'organisation', 'add_time']
     #filter_horizontal = (,)
     list_display = ('user', 'organisation', 'amount', 'type', 'location',
-                    'category', 'time')
+                    'category', 'project', 'time')
     list_filter = ['token__user__username', 'project__organisation__title',
                    'location', 'category', 'project']
     list_select_related = True
