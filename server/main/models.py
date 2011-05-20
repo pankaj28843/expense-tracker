@@ -18,12 +18,17 @@ class ExpenseManager(models.Manager):
         for val in field_values:
             qs = self.filter(**{field:val})
             sum_amount = qs.aggregate(models.Sum('amount'))['amount__sum']
-            st.append((val, sum_amount))
+            st.append({
+                'field_value': val,
+                'sum':sum_amount,
+            })
         return st
 
     def stats_string(self, field, currency):
         stats = self.stats(field)
-        stat_list = ['%s: %s%s' %(stat[0], currency, stat[1]) for stat in stats]
+        stat_list = ['%s: %s %s' %(stat['field_value'], currency,
+                                  stat['sum'])
+                     for stat in stats]
         return ', '.join(stat_list) or 'No expense'
 
     def total(self):
