@@ -16,12 +16,15 @@ class ExpenseManager(models.Manager):
         field_values = self.values_list(field, flat=True).distinct(field)
         st = []
         for val in field_values:
-            print val
             qs = self.filter(**{field:val})
             sum_amount = qs.aggregate(models.Sum('amount'))['amount__sum']
             st.append((val, sum_amount))
-
         return st
+
+    def stats_string(self, field, currency):
+        stats = self.stats(field)
+        stat_list = ['%s: %s%s' %(stat[0], currency, stat[1]) for stat in stats]
+        return ', '.join(stat_list) or 'No expense'
 
     def total(self):
         sum_amount = self.aggregate(models.Sum('amount'))['amount__sum']
@@ -68,9 +71,8 @@ class Project(models.Model):
         return self.title
 
     def _get_stats(self, field, *args):
-        stats = self.expense_set.stats(field)
-        stat_list = ['%s: %s%s' %(stat[0], self.currency, stat[1]) for stat in stats]
-        return ', '.join(stat_list) or 'No expense'
+        stats = self.expense_set.stats_string(field, self.currency)
+        return stats
 
     def category_stats(self):
         return self._get_stats('category__title')

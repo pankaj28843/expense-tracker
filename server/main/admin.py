@@ -48,7 +48,7 @@ class OrganisationAdmin(admin.ModelAdmin):
     ]
 
     readonly_fields = ()
-    filter_horizontal = ('users', 'locations')
+    filter_horizontal = ('users',)
     list_display = ('title', 'id')
     list_filter = ['title']
     search_fields = ['title']
@@ -75,7 +75,7 @@ class ProjectAdmin(admin.ModelAdmin):
     readonly_fields = ['organisation', 'category_stats', 'user_stats',
                        'location_stats']
     list_display = ['title', 'organisation', 'currency', 'total_spent']
-    list_filter = ['organisation', 'currency']
+    list_filter = ['currency']
 
     def queryset(self, request):
         qs = super(ProjectAdmin, self).queryset(request)
@@ -102,7 +102,7 @@ class ExpenseAdmin(admin.ModelAdmin):
     #filter_horizontal = (,)
     list_display = ('user', 'organisation', 'amount', 'type', 'location',
                     'category', 'project', 'time')
-    list_filter = ['token__user__username', 'project__organisation__title',
+    list_filter = ['project__organisation__title',
                    'location', 'category', 'project']
     list_select_related = True
     search_fields = ['token__user__username', 'project__organisation__title',
