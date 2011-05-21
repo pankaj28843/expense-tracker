@@ -58,10 +58,10 @@ Personal Expenses
             {{ field }}
         </td>
         {% endfor %}
-        <td><a id="remove-{{ form.prefix }}-row" href="javascript:void(0)" class="delete-row">remove</a></td>
+        <td><a id="remove-{{ form.prefix }}-row" href="javascript:void(0)" class="delete-row"><img src="{{ STATIC_URL }}admin/img/admin/icon_deletelink.gif" title="Remove this form"/></a></td>
     </tr>
     {% endfor %}
-    <tr><td ><a href="javascript:void(0)" class="add-row">add another</a></td></tr>
+    <tr class='no-border'><td ><a href="javascript:void(0)" class="add-row"><img src="{{ STATIC_URL }}admin/img/admin/icon_addlink.gif" title="Add another form"/></a></td></tr>
     <tr class="no-border"><td><input type="submit" value="Add" /></td><td>{% csrf_token %}</td></tr>
 </table>
 </form>
