@@ -1,11 +1,15 @@
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template import RequestContext
 from django.utils import simplejson
+from django.utils.functional import curry
+from django.forms.formsets import formset_factory
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, check_password
+
 
 from main.models import *
 from main.forms import PersonalExpenseForm, OfficialExpenseForm
@@ -17,16 +21,19 @@ import settings
 def home(request):
     expenses = Expense.objects.filter(token__user=request.user,
                                       type=PERSONAL).order_by('-time')
-
+    p = Paginator(expenses, 10)
+    page = p.page(request.GET.get('p', 1))
+    PExpFormset = formset_factory(PersonalExpenseForm)
     if request.method == 'POST':
-        form = PersonalExpenseForm(request.POST, request.FILES)
+        formset = PExpFormset(request.POST, request.FILES)
 
-        if form.is_valid():
-            expense = form.save(commit=False)
-            token = AuthToken.objects.get_or_create(user=request.user,
-                                                    site_token=True)[0]
-            expense.token = token
-            expense.save()
+        if formset.is_valid():
+            for form in formset:
+                expense = Expense(**form.cleaned_data)
+                token = AuthToken.objects.get_or_create(user=request.user,
+                                                        site_token=True)[0]
+                expense.token = token
+                expense.save()
 
             return redirect('/')
     else:
@@ -40,30 +47,39 @@ def home(request):
         except Expense.DoesNotExist:
             pass
 
-        form = PersonalExpenseForm(initial=initial)
+        PExpFormset.form = staticmethod(curry(PersonalExpenseForm,
+                                              initial=initial))
+        formset = PExpFormset()
 
-    return render(request, 'main/home.html', {'expenses': expenses,
-                                             'form':form})
+    return render(request, 'main/home.html', {'page': page,
+                                             'formset':formset})
 
 @login_required
 def organisation(request, org_pk):
     org = Organisation.objects.get(pk=org_pk)
     expenses = Expense.objects.filter(token__user=request.user,
                                       project__organisation=org).order_by('-time')
-    if request.method == 'POST':
-        form = OfficialExpenseForm(request.POST, request.FILES)
+    p = Paginator(expenses, 10)
+    page = p.page(request.GET.get('p', 1))
 
-        if form.is_valid():
-            expense = form.save(commit=False)
-            token = AuthToken.objects.get_or_create(user=request.user,
+    OExpFormset = formset_factory(OfficialExpenseForm)
+    OExpFormset.form = staticmethod(curry(OfficialExpenseForm, org))
+
+    if request.method == 'POST':
+        formset = OExpFormset(request.POST, request.FILES)
+
+        if formset.is_valid():
+            for form in formset:
+                expense = form.save(commit=False)
+                token = AuthToken.objects.get_or_create(user=request.user,
                                                     site_token=True)[0]
-            expense.token = token
-            if expense.billed:
-                expense.bill_id = '%s%s%s%s' %(token.user.id, expense.project.id,
-                                               token.id,
-                                               expenses.filter(token=token,
-                                                               billed=True).count()+1)
-            expense.save()
+                expense.token = token
+                if expense.billed:
+                    expense.bill_id = '%s%s%s%s' %(token.user.id, expense.project.id,
+                                                   token.id,
+                                                   expenses.filter(token=token,
+                                                                    billed=True).count()+1)
+                expense.save()
 
             return redirect(org)
     else:
@@ -78,14 +94,16 @@ def organisation(request, org_pk):
         except Expense.DoesNotExist:
             pass
 
-        form = OfficialExpenseForm(initial=initial)
+        OExpFormset.form = staticmethod(curry(OfficialExpenseForm, org,
+                                              initial=initial))
+        formset = OExpFormset()
 
-    form.update_querysets(org)
+    #form.update_querysets(org)
 
     return render(request, 'main/organisation.html', {
                                                 'organisation':org,
-                                                'expenses':expenses,
-                                                'form':form,
+                                                'page':page,
+                                                'formset':formset,
                                             })
 
 def mobile_login(request):

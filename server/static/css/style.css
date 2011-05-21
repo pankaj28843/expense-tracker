@@ -16,7 +16,7 @@ html{
 
 body{
     background:#122e66;
-    min-width:920px;
+    min-width:1000px;
     height:inherit;
 }
 
@@ -26,7 +26,6 @@ th, td{
 }
 
 th{
-    vertical-align:top;
 }
 
 li{
@@ -80,13 +79,25 @@ fieldset{
     padding:2px 7px;
 }
 
-.exp-his{
-    width:65%;
+.exp-det{
     font-size:13px;
 }
 
-.exp-his td{
-    width:80px;
+.exp-det td, input, select, texarea{
+    width:120px !important;
+}
+
+.exp-det td{
+    border:1px solid #ddd;
+    vertical-align:center;
+}
+
+.exp-det textarea{
+    height:20px;
+}
+
+.no-border, .no-border td{
+    border:none;
 }
 
 .bg-1{
@@ -102,16 +113,6 @@ fieldset{
 
 #submenu a, #submenu a:hover{
     color:#000;
-}
-
-#exp-form{
-    float:right;
-    width:280px;
-    font-size:12px;
-}
-
-#exp-form textarea{
-    height:40px;
 }
 
 .errorlist {
