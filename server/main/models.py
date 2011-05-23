@@ -8,10 +8,16 @@ from django.contrib.auth.models import User
 from random import random
 from hashlib import sha1
 
+#Type of expenses
 PERSONAL = 'p'
 OFFICIAL = 'o'
 
 class ExpenseManager(models.Manager):
+    """
+    Manager for expenditure. Provides statistics according to the
+    queryset.
+    """
+
     def stats(self, field):
         field_values = self.values_list(field, flat=True).distinct(field)
         st = []
@@ -44,6 +50,7 @@ class Location(models.Model):
 
 class Organisation(models.Model):
     title = models.CharField(max_length=200, unique=True)
+    ## These users have the administration access for the org
     admins = models.ManyToManyField(User, related_name='managed',
                                     blank=True)
     users = models.ManyToManyField(User, blank=True)
@@ -65,6 +72,8 @@ class Project(models.Model):
     )
     title = models.CharField(max_length=200, unique=True)
     organisation = models.ForeignKey(Organisation)
+    ## The currency which is used in the project
+    ## TODO: Move it to expense
     currency = models.CharField(max_length=10, choices=CURRENCIES)
     #budget = models.IntegerField()
 
@@ -76,6 +85,9 @@ class Project(models.Model):
         return self.title
 
     def _get_stats(self, field, *args):
+        """
+        Get expense stats for project expenses
+        """
         stats = self.expense_set.stats_string(field, self.currency)
         return stats
 
@@ -97,6 +109,10 @@ class Project(models.Model):
         return return_string
 
 class Category(models.Model):
+    '''
+    Expense Category
+    '''
+
     title = models.CharField(max_length=200, unique=True)
 
     class Meta:
@@ -106,6 +122,11 @@ class Category(models.Model):
         return self.title
 
 class AuthToken(models.Model):
+    """
+    A unique token given to mobile devices to track what device is used
+    to upload the data.
+    Also for uploading from websites, use a separate type of site token.
+    """
     user = models.ForeignKey(User)
     key = models.CharField(max_length=400, editable=False)
     time = models.DateTimeField(auto_now_add=True)
@@ -115,19 +136,26 @@ class AuthToken(models.Model):
         return '%s - %s token (%s)' % (self.user, self.type(), self.id)
 
     def type(self):
+        """
+        Returns type of token - On site/Mobile device
+        """
         return 'On site' if self.site_token else 'Mobile device'
 
-    def set_key(self):
+    def _set_key(self):
         salt = random()
         string = '%s%s-%s' %(self.user.username, self.user.password, salt)
         return sha1(string).hexdigest()
 
     def save(self, *args, **kwargs):
         if not self.key:
-            self.key = self.set_key()
+            self.key = self._set_key()
         return super(AuthToken, self).save(*args, **kwargs)
 
 class Expense(models.Model):
+    """
+    An expense. Recordes the amount and other details of an expenditure.
+    """
+
     TYPE_CHOICES = (
                 (PERSONAL, 'Personal'),
                 (OFFICIAL, 'Official')
@@ -161,6 +189,9 @@ class Expense(models.Model):
         return self.project.organisation if self.project else '-'*16
 
 def create_csv(*args):
+    """
+    Create a comma and `|` separated string according to the list supplied.
+    """
     final_list = []
     for arg in args:
         if type(arg)==list:
@@ -172,10 +203,16 @@ def create_csv(*args):
     return '|'.join(final_list)
 
 def get_list(queryset, attribute='title', order_attrib='title'):
+    """
+    Get a list of values an attribute of queryset.
+    """
     queryset = queryset.order_by(order_attrib)
     return map(lambda x:str(getattr(x, attribute)), queryset)
 
 def get_by_title(model, title):
+    """
+    Get object or None according to title supplied
+    """
     try:
         obj = model.objects.get(title__iexact=title)
     except:
@@ -183,6 +220,11 @@ def get_by_title(model, title):
     return obj
 
 def get_sync_data(auth_token):
+    """
+    Create sync data string to be provided to mobile devices.
+    Format:
+    uid|token|projects(csv)|project_ids(csv)|type(csv)|locations(csv)|last bill or empty
+    """
     user = auth_token.user
     orgs = user.organisation_set.all()
     project_set = Project.objects.filter(

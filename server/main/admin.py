@@ -1,6 +1,6 @@
 from django.contrib import admin
 from main.models import *
-from main.forms import OrgAddForm, AdminExpenseForm
+from main.forms import AdminExpenseForm
 
 class LocationAdmin(admin.ModelAdmin):
 
@@ -32,19 +32,25 @@ class CategoryAdmin(admin.ModelAdmin):
     #date_hierarchy = 'time'
 
 class ProjectInline(admin.TabularInline):
+    """
+    Inline project administration for adding projects
+    """
     model = Project
     extra = 1
 
     fields = ['title', 'currency']
 
 class OrganisationAdmin(admin.ModelAdmin):
+    """
+    Organisation management. Restricted to organisation admins
+    """
 
     fieldsets = [
-                (None,   {
-                            'fields': ['title', 'admins', 'users',
-                                       'locations', ],
-                         }
-                ),
+        (None,   {
+                    'fields': ['title', 'admins', 'users',
+                               'locations', ],
+                 }
+        ),
     ]
 
     readonly_fields = ()
@@ -63,13 +69,16 @@ class OrganisationAdmin(admin.ModelAdmin):
 
 
 class ProjectAdmin(admin.ModelAdmin):
+    """
+    Detailed project admin for managing project
+    """
     fieldsets = [
-            (None, {
-                'fields':['title', 'organisation', 'currency'],
-            }),
-            ('Stats',{
-                'fields':['category_stats', 'user_stats', 'location_stats'],
-            })
+        (None, {
+            'fields':['title', 'organisation', 'currency'],
+        }),
+        ('Stats',{
+            'fields':['category_stats', 'user_stats', 'location_stats'],
+        })
     ]
 
     readonly_fields = ['organisation', 'category_stats', 'user_stats',
@@ -85,6 +94,10 @@ class ProjectAdmin(admin.ModelAdmin):
             return qs.filter(organisation__in=request.user.organisation_set.all())
 
 class ExpenseAdmin(admin.ModelAdmin):
+    """
+    Expenditure details administration. Restricted to official expeneses
+    and accessible to organisation admins only.
+    """
     fieldsets = [
             (None, {
                 'fields':['user' , 'type', 'amount', 'location',
@@ -121,6 +134,7 @@ class ExpenseAdmin(admin.ModelAdmin):
         if request.user.has_perms('main.expense'):
             return fields
         else:
+            # General admins cannot edit project
             fields.append('project')
             return fields
 
