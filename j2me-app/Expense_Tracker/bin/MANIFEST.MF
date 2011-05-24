@@ -1,0 +1,23 @@
+MIDlet-1: Expense_Tracker, icon.png, ExpenseTracker
+MIDlet-Data-Size: 20480
+MIDlet-Delete-Confirm: Please upload all your expenses before deleting 
+ t his application.
+MIDlet-Delete-Notify: Expense Tracker has been successfully removed fr 
+ om your phone.
+MIDlet-Description: Expense Tracker has been developed by Policy Innova
+  tions to track expenses of their employees in realtime. Users can tra
+ c k their personal expenses as well but this data will be available to
+  y ou only. This is just an effort to improve your habbit of expending
+  mo ney.
+MIDlet-Icon: images/icon.png
+MIDlet-Info-URL: http://xtrack.ep.io
+MIDlet-Install-Notify: You will need to login before adding any expense
+  s. In case you don't have username/password, please ask for one to yo
+ u r adminstrators.
+MIDlet-Name: Expense_Tracker
+MIDlet-Permissions: javax.microedition.io.Connector.http,javax.microedi
+  tion.media.control.RecordControl
+MIDlet-Vendor: Policy Innovations
+MIDlet-Version: 1.0
+MicroEdition-Configuration: CLDC-1.0
+MicroEdition-Profile: MIDP-1.0
