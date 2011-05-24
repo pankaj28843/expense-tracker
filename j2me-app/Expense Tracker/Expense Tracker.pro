@@ -1,4 +1,0 @@
--libraryjars /home/pankaj/WTK2.5.2/lib/midpapi10.jar:/home/pankaj/WTK2.5.2/lib/cldcapi10.jar:/home/pankaj/WTK2.5.2/lib/cldcapi10.jar
--injars /home/pankaj/j2mewtk/2.5.2/apps/Expense Tracker/bin/Expense Tracker.jar
--outjar /tmp/Expense Tracker.jar
--keep public class * extends javax.microedition.midlet.MIDlet 
