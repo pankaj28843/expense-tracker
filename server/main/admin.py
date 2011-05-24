@@ -1,6 +1,6 @@
 from django.contrib import admin
 from main.models import *
-from main.forms import OrgAddForm, AdminExpenseForm
+from main.forms import AdminExpenseForm
 
 class LocationAdmin(admin.ModelAdmin):
 
@@ -32,24 +32,29 @@ class CategoryAdmin(admin.ModelAdmin):
     #date_hierarchy = 'time'
 
 class ProjectInline(admin.TabularInline):
+    """
+    Inline project administration for adding projects
+    """
     model = Project
     extra = 1
 
     fields = ['title', 'currency']
-    readonly_fields = ('expense_stats',)
 
 class OrganisationAdmin(admin.ModelAdmin):
+    """
+    Organisation management. Restricted to organisation admins
+    """
 
     fieldsets = [
-                (None,   {
-                            'fields': ['title', 'admins', 'users',
-                                       'locations', ],
-                         }
-                ),
+        (None,   {
+                    'fields': ['title', 'admins', 'users',
+                               'locations', ],
+                 }
+        ),
     ]
 
     readonly_fields = ()
-    filter_horizontal = ('users', 'locations')
+    filter_horizontal = ('users',)
     list_display = ('title', 'id')
     list_filter = ['title']
     search_fields = ['title']
@@ -64,18 +69,22 @@ class OrganisationAdmin(admin.ModelAdmin):
 
 
 class ProjectAdmin(admin.ModelAdmin):
+    """
+    Detailed project admin for managing project
+    """
     fieldsets = [
-            (None, {
-                'fields':['title', 'organisation', 'currency'],
-            }),
-            ('Stats',{
-                'fields':['expense_stats']
-            })
+        (None, {
+            'fields':['title', 'organisation', 'currency'],
+        }),
+        ('Stats',{
+            'fields':['category_stats', 'user_stats', 'location_stats'],
+        })
     ]
 
-    readonly_fields = ['organisation', 'expense_stats',]
-    list_display = ['title', 'organisation', 'currency', 'expense_stats']
-    list_filter = ['organisation', 'currency']
+    readonly_fields = ['organisation', 'category_stats', 'user_stats',
+                       'location_stats']
+    list_display = ['title', 'organisation', 'currency', 'total_spent']
+    list_filter = ['currency']
 
     def queryset(self, request):
         qs = super(ProjectAdmin, self).queryset(request)
@@ -85,24 +94,28 @@ class ProjectAdmin(admin.ModelAdmin):
             return qs.filter(organisation__in=request.user.organisation_set.all())
 
 class ExpenseAdmin(admin.ModelAdmin):
+    """
+    Expenditure details administration. Restricted to official expeneses
+    and accessible to organisation admins only.
+    """
     fieldsets = [
             (None, {
-                'fields':['user' , 'organisation', 'type', 'amount', 'location',
+                'fields':['user' , 'type', 'amount', 'location',
                           'category', 'time', 'add_time'],
             }),
             ('Meta', {
-                'fields': ['project', 'billed', 'bill_id', 'bill_image',
-                           'description'],
+                'fields': ['organisation', 'project', 'billed', 'bill_id', 
+                           'bill_image', 'description'],
             },)
     ]
 
     form = AdminExpenseForm
 
-    readonly_fields = ['user', 'organisation', 'add_time']
+    readonly_fields = ['user', 'organisation', 'add_time', 'billed', 'bill_id']
     #filter_horizontal = (,)
     list_display = ('user', 'organisation', 'amount', 'type', 'location',
-                    'category', 'time')
-    list_filter = ['token__user__username', 'project__organisation__title',
+                    'category', 'project', 'time')
+    list_filter = ['project__organisation__title',
                    'location', 'category', 'project']
     list_select_related = True
     search_fields = ['token__user__username', 'project__organisation__title',
@@ -121,6 +134,7 @@ class ExpenseAdmin(admin.ModelAdmin):
         if request.user.has_perms('main.expense'):
             return fields
         else:
+            # General admins cannot edit project
             fields.append('project')
             return fields
 

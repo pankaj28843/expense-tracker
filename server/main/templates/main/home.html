@@ -1,29 +1,68 @@
 {% extends 'base.html' %}
 {% block head %}
-{{ form.media.css }}
+<script type="text/javascript" src="{{ STATIC_URL }}js/add_form.js"></script>
 {% endblock %}
 {% block heading %}
 Personal Expenses
 <hr/>
 {% endblock %}
 {% block content %}
-<fieldset id=exp-form>
-<h3>Add</h3>
-<form action = '/' method="post">
-    <table>
-        {% csrf_token %}
-        {{ form }}
-        <tr><td width="30%"></td><td><input type="submit" value="Add" /></td></tr>
-    </table>
-</form>
-</fieldset>
-{{ form.media.js }}
-<table class="exp-his">
-    <tr><th width="125px"></th><th>Amount</th><th>Category</th><th>Location</th><th></th></tr>
-    {% for expense in expenses %}
-    <tr><td class="meta">{{ expense.time }}</td><td>{{ expense.amount }}</td><td>{{ expense.category }}</td><td>{{ expense.location }}</td><td></td></tr>
-    {% empty %}
-    <td>No expenses</td></tr>
+<div id="pagination" style="float:right">
+    {% if page.has_next %}<a href="?p={{ page.next_page_number }}">Older Expenses</a>{% endif %}
+    {% if page.has_previous %}<a href="?p={{ page.previous_page_number }}">Newer Expenses</a>{% endif %}
+</div>
+<form action = '' method="post">
+    {{ formset.management_form }}
+    <table class="exp-det">
+        <tr>
+            <th></th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Location</th>
+            <th>Extra Details</th>
+        </tr>
+        {% for expense in page.object_list %}
+        <tr>
+            <td class="meta">{{ expense.time }}</td>
+            <td>{{ expense.amount }}</td>
+            <td>{{ expense.category }}</td>
+            <td>{{ expense.location }}</td>
+            <td>{{ expense.description }}</td></tr>
+        {% empty %}
+        <td>No expenses</td></tr>
     {% endfor %}
+    <script type="text/javascript">
+    <!--
+    $(function () {
+        $('.add-row').click(function() {
+            return addForm(this, 'form');
+        });
+        $('.delete-row').click(function() {
+            return deleteForm(this, 'form');
+        })
+    })
+    //-->
+    </script>
+    {{ formset.non_form_errors.as_ul }}
+    {% for form in formset.forms %}
+    <tr class="{% cycle row1,row2 %} no-border dynamic-form">
+        {% for field in form.visible_fields %}
+        <td>
+            {# Include the hidden fields in the form #}
+            {% if forloop.first %}
+            {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+            {% endfor %}
+            {% endif %}
+            {{ field.errors.as_ul }}
+            {{ field }}
+        </td>
+        {% endfor %}
+        <td><a id="remove-{{ form.prefix }}-row" href="javascript:void(0)" class="delete-row"><img src="{{ STATIC_URL }}admin/img/admin/icon_deletelink.gif" title="Remove this form"/></a></td>
+    </tr>
+    {% endfor %}
+    <tr class='no-border'><td ><a href="javascript:void(0)" class="add-row"><img src="{{ STATIC_URL }}admin/img/admin/icon_addlink.gif" title="Add another form"/></a></td></tr>
+    <tr class="no-border"><td><input type="submit" value="Add" /></td><td>{% csrf_token %}</td></tr>
 </table>
+</form>
 {% endblock %}
