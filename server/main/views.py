@@ -10,6 +10,7 @@ from django.forms.formsets import formset_factory
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, check_password
 
+from excel_response import ExcelResponse
 from main.models import *
 from main.forms import PersonalExpenseForm, OfficialExpenseForm
 
@@ -118,6 +119,12 @@ def organisation(request, org_pk):
                                                 'page':page,
                                                 'formset':formset,
                                             })
+
+def excel_export(request):
+    expenses = Expense.objects.filter(project__isnull=False)
+    data = [expense.data_tuple() for expense in expenses]
+    print data
+    return ExcelResponse(data)
 
 def mobile_login(request):
     '''

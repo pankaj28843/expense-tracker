@@ -1,6 +1,8 @@
 from django.contrib import admin
+from excel_response import ExcelResponse
 from main.models import *
 from main.forms import AdminExpenseForm
+
 
 class LocationAdmin(admin.ModelAdmin):
 
@@ -93,6 +95,22 @@ class ProjectAdmin(admin.ModelAdmin):
         else:
             return qs.filter(organisation__in=request.user.organisation_set.all())
 
+
+def export_as_xls(modeladmin, request, queryset):
+    data = [(
+        'User',
+        'Amount',
+        'Location',
+        'Category',
+        'Organisation',
+        'Project',
+        'Time',
+    )]
+    for expense in queryset:
+        data.append(expense.data_tuple())
+    return ExcelResponse(data)
+export_as_xls.short_description = 'Export as spreadsheet'
+
 class ExpenseAdmin(admin.ModelAdmin):
     """
     Expenditure details administration. Restricted to official expeneses
@@ -110,6 +128,8 @@ class ExpenseAdmin(admin.ModelAdmin):
     ]
 
     form = AdminExpenseForm
+
+    actions = [export_as_xls]
 
     readonly_fields = ['user', 'organisation', 'add_time', 'billed', 'bill_id']
     #filter_horizontal = (,)

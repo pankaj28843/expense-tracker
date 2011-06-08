@@ -188,6 +188,17 @@ class Expense(models.Model):
     def organisation(self):
         return self.project.organisation if self.project else '-'*16
 
+    def data_tuple(self):
+        return (
+            unicode(self.user()),
+            self.amount,
+            unicode(self.location),
+            unicode(self.category),
+            unicode(self.organisation()),
+            unicode(self.project),
+            self.time.date().isoformat(),
+        )
+
 def create_csv(*args):
     """
     Create a comma and `|` separated string according to the list supplied.
