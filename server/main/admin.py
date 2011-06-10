@@ -1,6 +1,7 @@
 from django.contrib import admin
 from excel_response import ExcelResponse
-from main.models import *
+from main.models import Location, Category, Expense, Organisation, Project, \
+        OFFICIAL
 from main.forms import AdminExpenseForm
 
 
@@ -40,7 +41,7 @@ class ProjectInline(admin.TabularInline):
     model = Project
     extra = 1
 
-    fields = ['title', 'currency']
+    fields = ['title']
 
 class OrganisationAdmin(admin.ModelAdmin):
     """
@@ -50,12 +51,17 @@ class OrganisationAdmin(admin.ModelAdmin):
     fieldsets = [
         (None,   {
                     'fields': ['title', 'admins', 'users',
-                               'locations', ],
+                               'locations', 'currency'],
                  }
         ),
+        ('Stats',{
+            'fields':['category_stats', 'user_stats', 'location_stats',
+                      'total_spent'],
+        })
     ]
 
-    readonly_fields = ()
+    readonly_fields = ['category_stats', 'user_stats', 'location_stats',
+                       'total_spent']
     filter_horizontal = ('users',)
     list_display = ('title', 'id')
     list_filter = ['title']
@@ -76,17 +82,18 @@ class ProjectAdmin(admin.ModelAdmin):
     """
     fieldsets = [
         (None, {
-            'fields':['title', 'organisation', 'currency'],
+            'fields':['title', 'organisation', 'get_currency'],
         }),
         ('Stats',{
-            'fields':['category_stats', 'user_stats', 'location_stats'],
+            'fields':['category_stats', 'user_stats', 'location_stats',
+                      'total_spent'],
         })
     ]
 
-    readonly_fields = ['organisation', 'category_stats', 'user_stats',
-                       'location_stats']
-    list_display = ['title', 'organisation', 'currency', 'total_spent']
-    list_filter = ['currency']
+    readonly_fields = ['organisation', 'get_currency', 'category_stats',
+                       'user_stats', 'location_stats', 'total_spent']
+    list_display = ['title', 'organisation', 'get_currency', 'total_spent']
+    list_filter = []
 
     def queryset(self, request):
         qs = super(ProjectAdmin, self).queryset(request)
@@ -167,7 +174,7 @@ class ExpenseAdmin(admin.ModelAdmin):
             return f
         return f
         if obj is None:
-            f.project.queryset=Project.objects.filter(organisation__in=user.organisation_set.all())
+            f.project.queryset=Project.objects.filter(organisation__in=request.user.organisation_set.all())
         else:
             f.project.queryset=Project.objects.filter(organisation=obj.organisation)
         return f

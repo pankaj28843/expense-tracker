@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.db import models
-from django import forms
+from django.db.models.query import QuerySet
 from django.core.urlresolvers import reverse
 
 from django.contrib.auth.models import User
@@ -12,11 +12,12 @@ from hashlib import sha1
 PERSONAL = 'p'
 OFFICIAL = 'o'
 
-class ExpenseManager(models.Manager):
-    """
-    Manager for expenditure. Provides statistics according to the
-    queryset.
-    """
+# This is based on the snippet:
+# http://djangosnippets.org/snippets/734/
+class ExpenseQuerySet(QuerySet):
+    '''
+    The methods provide statistics according to the queryset.
+    '''
 
     def stats(self, field):
         field_values = self.values_list(field, flat=True).distinct(field)
@@ -42,6 +43,15 @@ class ExpenseManager(models.Manager):
         return sum_amount
 
 
+class ExpenseManager(models.Manager):
+    """
+    Manager for expenditure.
+    """
+
+    def get_query_set(self):
+        return ExpenseQuerySet(self.model)
+
+
 class Location(models.Model):
     title = models.CharField(max_length=200, unique=True)
 
@@ -49,10 +59,21 @@ class Location(models.Model):
         return self.title
 
 class Organisation(models.Model):
+    CURRENCIES = (
+        ('Rs.', 'Indian Rupees (Rs.)'),
+        (u'$', 'USD ($)'),
+        (u'£', 'Pound (£)'),
+        (u'€', 'Euro (€)'),
+        (u'¥', 'Yen (¥)'),
+    )
     title = models.CharField(max_length=200, unique=True)
     ## These users have the administration access for the org
     admins = models.ManyToManyField(User, related_name='managed',
                                     blank=True)
+    ## The currency which is used by the organisation
+    ## TODO: Move it to expense
+    currency = models.CharField(max_length=10, choices=CURRENCIES,
+                                default='Rs.')
     users = models.ManyToManyField(User, blank=True)
     locations = models.ManyToManyField(Location)
 
@@ -62,33 +83,16 @@ class Organisation(models.Model):
     def get_absolute_url(self):
         return reverse('organisation', kwargs={'org_pk': self.pk})
 
-class Project(models.Model):
-    CURRENCIES = (
-        ('Rs.', 'Indian Rupees (Rs.)'),
-        (u'$', 'USD ($)'),
-        (u'£', 'Pound (£)'),
-        (u'€', 'Euro (€)'),
-        (u'¥', 'Yen (¥)'),
-    )
-    title = models.CharField(max_length=200, unique=True)
-    organisation = models.ForeignKey(Organisation)
-    ## The currency which is used in the project
-    ## TODO: Move it to expense
-    currency = models.CharField(max_length=10, choices=CURRENCIES)
-    #budget = models.IntegerField()
-
-    class Meta:
-        #ordering = ['title']
-        pass
-
-    def __unicode__(self):
-        return self.title
+    def get_currency(self):
+        return self.currency
 
     def _get_stats(self, field, *args):
         """
         Get expense stats for project expenses
         """
-        stats = self.expense_set.stats_string(field, self.currency)
+        project_set = self.project_set.all()
+        expense_set = Expense.objects.filter(project__in=project_set)
+        stats = expense_set.stats_string(field, self.get_currency())
         return stats
 
     def category_stats(self):
@@ -101,9 +105,51 @@ class Project(models.Model):
         return self._get_stats('location__title')
 
     def total_spent(self):
-        total = self.expense_set.total()
+        project_set = self.project_set.all()
+        expense_set = Expense.objects.filter(project__in=project_set)
+        total = expense_set.total()
         if total:
-            return_string = '%s%s' %(self.currency, total)
+            return_string = '%s%s' %(self.get_currency(), total)
+        else:
+            return_string = 'No expense till now'
+        return return_string
+
+class Project(models.Model):
+    title = models.CharField(max_length=200, unique=True)
+    organisation = models.ForeignKey(Organisation)
+
+    class Meta:
+        #ordering = ['title']
+        pass
+
+    def __unicode__(self):
+        return self.title
+
+    def get_currency(self):
+        return self.organisation.get_currency()
+    get_currency.short_description = 'Currency'
+
+    def _get_stats(self, field, *args):
+        """
+        Get expense stats for project expenses
+        """
+        expense_set = self.expense_set.all()
+        stats = expense_set.stats_string(field, self.get_currency())
+        return stats
+
+    def category_stats(self):
+        return self._get_stats('category__title')
+
+    def user_stats(self):
+        return self._get_stats('token__user__username')
+
+    def location_stats(self):
+        return self._get_stats('location__title')
+
+    def total_spent(self):
+        total = self.expense_set.all().total()
+        if total:
+            return_string = '%s%s' %(self.get_currency(), total)
         else:
             return_string = 'No expense till now'
         return return_string

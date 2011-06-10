@@ -1,2 +1,4 @@
 Django
 south
+xlwt
+django-excel-response
